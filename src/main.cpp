@@ -1,8 +1,9 @@
+#include "SpellChecker.h"
 #include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
-
-
-void printUsage(char *execName)
+void printUsage(const char *execName)
 {
   fprintf(stderr, "Usage: %s option file...\n", execName);
   fprintf(stderr, "Options:\n");
@@ -14,7 +15,7 @@ void printUsage(char *execName)
 int main(int argc, char **argv)
 {
 
-  if (argc < 2) {
+  if (argc < 4) {
     printUsage(argv[0]);
     return EXIT_FAILURE;
   }
@@ -22,17 +23,17 @@ int main(int argc, char **argv)
   for (int i = 1; i < argc; i+=2)
     if (strcmp(argv[i], "-b") == 0)
     {
-      // TODO: generate dictionary from argv[i+1], argv[i+2]
-      break;
+      // TODO: generate dictionary from argv[i+1] and output to argv[i+2]
+      //SpellChecker->Create(argv[i+1], argv[i+2]);
     }
     else if (strcmp(argv[i], "-d") == 0)
     {
       // TODO: do spell checking for the ariticle argv[i+2] by the dicionary argv[i+1]
-      break;
+      //SpellChecker->Suggest(argv[i+2], argv[i+1]);
     }
     else
     {
-      printUage(argv[0]);
+      printUsage(argv[0]);
       return EXIT_FAILURE;
     }
 
