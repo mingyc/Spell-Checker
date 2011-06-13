@@ -3,29 +3,42 @@
 
 #include <vector>
 #include <string>
+#include <memory>
 using std::string;
 using std::vector;
+using std::auto_ptr;
 
 
 class SpellChecker {
 
   public:
-    // Default Constructor
-    SpellChecker();
-    // Default Destructor
-    ~SpellChecker();
 
-    void Create(const char *text, const char *dict) {
+    static SpellChecker *getInstance() {
+      if (_instance.get() == 0)
+        _instance.reset(new SpellChecker());
+      return _instance.get();
     }
-    vector<string> Suggest(const char *article, const char *dict) {
-    }
+
+    void Create(const char *text, const char *dict);
+    vector<string> Suggest(const char *article, const char *dict);
+    
 
   private:
-    virtual void build(string textFile, string dictionaryFile) = 0;
-    virtual void load(string dictionaryFile) = 0;
-    virtual void check() = 0;
-    virtual vector<string> basic_suggest(string word) = 0;
+    void build(string textFile, string dictionaryFile);
+    void load(string dictionaryFile);
+    void check();
+    vector<string> basic_suggest(string word);
 
+
+  protected:
+    SpellChecker();
+    ~SpellChecker();
+
+  private:
+    friend class auto_ptr<SpellChecker>;
+    // This class member save the only one instance while executing time.
+    // The usage is known as the Singleton Pattern.
+    static auto_ptr<SpellChecker> _instance;
 };
 
 
