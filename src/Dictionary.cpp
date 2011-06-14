@@ -1,6 +1,9 @@
 #include "Dictionary.h"
 #include <cstdio>
 
+extern int yylex();
+extern FILE *yyin;
+extern char *yytext;
 
 Dictionary::Dictionary(const string &srcFile, const string &destFile) {
   load(srcFile);
@@ -41,6 +44,7 @@ int  Dictionary::getCount(const string &word) {
 //
 void Dictionary::load(const string &file) {
   FILE *corpus = fopen(file.c_str(), "r");
+  yyin = corpus;
 
 
   fclose(corpus);
