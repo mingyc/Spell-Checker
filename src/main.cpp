@@ -24,12 +24,12 @@ int main(int argc, char **argv)
     if (strcmp(argv[i], "-b") == 0)
     {
       // TODO: generate dictionary from argv[i+1] and output to argv[i+2]
-      //SpellChecker->Create(argv[i+1], argv[i+2]);
+      SpellChecker::getInstance()->Create(argv[i+1], argv[i+2]);
     }
     else if (strcmp(argv[i], "-d") == 0)
     {
       // TODO: do spell checking for the ariticle argv[i+2] by the dicionary argv[i+1]
-      //SpellChecker->Suggest(argv[i+2], argv[i+1]);
+      SpellChecker::getInstance()->Suggest(argv[i+2], argv[i+1]);
     }
     else
     {

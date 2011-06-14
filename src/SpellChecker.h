@@ -24,10 +24,10 @@ class SpellChecker {
     
 
   private:
-    void build(string textFile, string dictionaryFile);
-    void load(string dictionaryFile);
-    void check(string word);
-    vector<string> basic_suggest(string word);
+    void build(const string &textFile, const string &dictionaryFile);
+    void load(const string i&dictionaryFile);
+    void check(const string &word);
+    vector<string> basic_suggest(const string &word);
 
 
   protected:
@@ -39,6 +39,8 @@ class SpellChecker {
     // This class member save the only one instance while executing time.
     // The usage is known as the Singleton Pattern.
     static auto_ptr<SpellChecker> _instance;
+
+    auto_ptr<Dictionary>          dict;
 };
 
 
