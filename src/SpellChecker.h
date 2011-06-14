@@ -1,6 +1,8 @@
 #ifndef __SPELLCHECKER_H__
 #define __SPELLCHECKER_H__
 
+#include "Dictionary.h"
+
 #include <vector>
 #include <string>
 #include <memory>
@@ -25,7 +27,7 @@ class SpellChecker {
 
   private:
     void build(const string &textFile, const string &dictionaryFile);
-    void load(const string i&dictionaryFile);
+    void load(const string &idictionaryFile);
     void check(const string &word);
     vector<string> basic_suggest(const string &word);
 

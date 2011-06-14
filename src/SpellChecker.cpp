@@ -1,5 +1,7 @@
 #include "SpellChecker.h"
 
+auto_ptr<SpellChecker> SpellChecker::_instance;
+
 
 SpellChecker::SpellChecker() {
 
