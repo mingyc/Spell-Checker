@@ -1,5 +1,5 @@
-#ifndef __SPELLCHECKER__
-#define __SPELLCHECKER__
+#ifndef __SPELLCHECKER_H__
+#define __SPELLCHECKER_H__
 
 #include <vector>
 #include <string>
@@ -26,7 +26,7 @@ class SpellChecker {
   private:
     void build(string textFile, string dictionaryFile);
     void load(string dictionaryFile);
-    void check();
+    void check(string word);
     vector<string> basic_suggest(string word);
 
 
@@ -43,4 +43,4 @@ class SpellChecker {
 
 
 
-#endif // __SPELLCHECKER__
+#endif // __SPELLCHECKER_H__

@@ -3,7 +3,7 @@
 TARGET=project
 
 MAIN=main.cpp
-SRC=SpellChecker.cpp
+SRC=SpellChecker.cpp Dictionary.cpp
 SRC_PATH=src
 
 MAIN:=$(addprefix $(SRC_PATH)/, $(MAIN))
@@ -25,6 +25,9 @@ $(TARGET): $(MAIN) $(addprefix $(SRC_PATH)/, $(SRC))  $(OBJ)
 
 
 SpellChecker.o: $(SRC_PATH)/SpellChecker.cpp $(SRC_PATH)/SpellChecker.h 
+	$(CXX) -c $<
+
+Dictionary.o: $(SRC_PATH)/Dictionary.cpp $(SRC_PATH)/Dictionary.h
 	$(CXX) -c $<
 
 

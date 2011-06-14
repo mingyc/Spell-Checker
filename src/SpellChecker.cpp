@@ -30,6 +30,7 @@ vector<string> SpellChecker::Suggest(const char *article, const char *dict) {
 }
 
 
+
 //
 // private void build(string textFile, string dictionaryFile)
 // @textFile: 
@@ -49,9 +50,10 @@ void SpellChecker::load(string dictionaryFile) {
 }
 
 //
-// private void check()
+// private void check(string word)
+// @word:
 //
-void SpellChecker::check() {
+void SpellChecker::check(string word) {
 
 }
 
