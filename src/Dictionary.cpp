@@ -8,19 +8,39 @@ extern FILE *yyin;
 extern FILE *yyout;
 extern char *yytext;
 
-Dictionary::Dictionary(const string &srcFile, const string &destFile){
+
+//
+// public Dictionary(const string &srcTxtFile, const string &destBinFile)
+// @srcTxtFile:
+//    The name of a text file worked as the source of this dictionary
+// @destBinFile:
+//    The name of where this dictionary should dump the internal data structure
+// The constructor will read from srcTxtFile, build a dictionary to be queried and then dump the whole
+// data structure into destBinFile
+//
+Dictionary::Dictionary(const string &srcTxtFileName, const string &destBinFileName) {
   preroot = NULL;
   root = NULL;
   length = 0;
-  load(srcFile);
-  write(destFile);
+  read(srcTxtFileName);
+  dump(destBinFileName);
 }
 
+//
+// public Dictionary(const string &srcBinFileName)
+// @srcBinFile:
+//
+// The constructor will load a binary file which is of the same formatted as internal data structure
+//
+Dictionary::Dictionary(const string &srcBinFileName) {
+  root = NULL;
+  length = 0;
+  load(srcBinFileName);
+}
 
 Dictionary::~Dictionary() {
-	delete[] root;
+  delete[] root;
 }
-
 
 //
 // public bool exist(const string &word)
@@ -49,22 +69,48 @@ int Dictionary::getCount(const string &word){
 
 
 //
-// private void load(const string &file)
+// private void read(const string &file)
 // @file:
-//    Given a txt file, load it into internal data structure and prepared for querying
+//    Given a txt file, parse it into internal data structure and prepared for querying
 //
-void Dictionary::load(const string &file) {
+void Dictionary::read(const string &file) {
   FILE *corpus = fopen(file.c_str(), "r");
-  
+
   // redirect yyin and close yyout
   yyin = corpus;
   fclose(yyout);
   
   // add words from yylex to dictionary
   while(yylex() != 0){
-    preDictAdd(&preroot, yytext);
-	length++;
+    if(preDictAdd(&preroot, yytext) == true)
+      length++;
   }
+
+  fclose(corpus);
+}
+
+
+//
+// private void load(const string &file)
+// @file:
+//    
+// Load the binary file into internal memory format
+//
+void Dictionary::load(const string &file) {
+  FILE *corpus = fopen(file.c_str(), "r");
+  int i;
+  char buf[256];
+  fscanf(corpus, "%d", &length);
+  printf("corpus length = %d\n", length);
+  root = new struct Dict[length];
+  for(i = 0; i < length; i++){
+    fscanf(corpus, "%s", buf);
+	(root+i)->word = new char[strlen(buf) + 1];
+	strcpy((root+i)->word, buf);
+	(root+i)->count = 0;
+	printf("load word: %s\n", (root+i)->word);
+  }
+  printf("load OK!\n");
   fclose(corpus);
 }
 
@@ -72,32 +118,36 @@ void Dictionary::load(const string &file) {
 //
 // private void write(const string &file)
 // @file:
-//     Write internal data structure into this file in binary format
+//     
+// Dump internal data structure into this file in binary format
 //
-void Dictionary::write(const string &file) {
+void Dictionary::dump(const string &file) {
   FILE *dump = fopen(file.c_str(), "w+");
   root = new struct Dict[length];
+  fprintf(dump, "%d\n", length);
   preDictDump(preroot, dump);
   preDictDestroy(preroot);
   preroot = NULL;
   fclose(dump);
 }
 
-void Dictionary::preDictAdd(struct preDict **preroot, const char *word){
+bool Dictionary::preDictAdd(struct preDict **preroot, const char *word){
   // store pre dictionary by binary tree
   if(*preroot == NULL){
     *preroot = new struct preDict[1];
     (*preroot)->word = new char[strlen(word) + 1];
     (*preroot)->leftPtr = (*preroot)->rightPtr = NULL;
     strcpy((*preroot)->word, word);
-	(*preroot)->count = 1;
+    (*preroot)->count = 1;
+	return 1;
   }else{
     if(strcmp((*preroot)->word, word) > 0){
-      preDictAdd(&((*preroot)->leftPtr), word);
+      return preDictAdd(&((*preroot)->leftPtr), word);
     }else if(strcmp((*preroot)->word, word) < 0){
-      preDictAdd(&((*preroot)->rightPtr), word);
+      return preDictAdd(&((*preroot)->rightPtr), word);
     }else{
-	  (*preroot)->count += 1;
+      (*preroot)->count += 1;
+	  return 0;
     }
   }
 }
@@ -108,9 +158,9 @@ void Dictionary::preDictDump(struct preDict *preroot, FILE *dump){
   if(preroot != NULL){
     preDictDump(preroot->leftPtr, dump);
     fprintf(dump, "%s\n", preroot->word);
-	(root + count)->count = preroot->count;
-	(root + count)->word = new char [strlen(preroot->word) + 1];
-	strcpy((root + count)->word, preroot->word);
+    (root + count)->count = preroot->count;
+    (root + count)->word = new char [strlen(preroot->word) + 1];
+    strcpy((root + count)->word, preroot->word);
     preDictDump(preroot->rightPtr, dump);
   }
 }
@@ -125,15 +175,15 @@ void Dictionary::preDictDestroy(struct preDict *preroot){
 }
 
 struct Dict *Dictionary::DictFind(struct Dict *root, const char *target){
-  int left = 0, right = length, mid;
+  int left = 0, right = length - 1, mid;
   while(left <= right){
     mid = (left + right) / 2;
-	if(strcmp((root+mid)->word, target) > 0)
-		right = mid - 1;
-	else if(strcmp((root+mid)->word, target) < 0)
-		left = mid + 1;
-	else
-		return (root+mid);
+    if(strcmp((root+mid)->word, target) > 0)
+      right = mid - 1;
+    else if(strcmp((root+mid)->word, target) < 0)
+      left = mid + 1;
+    else
+      return (root+mid);
   }
   return NULL;
 }

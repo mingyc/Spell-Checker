@@ -9,7 +9,7 @@ SRC_PATH=src
 MAIN:=$(addprefix $(SRC_PATH)/, $(MAIN))
 OBJ=scanner.o $(SRC:.cpp=.o)
 
-LDFLAGS=-O3
+LDFLAGS=-O3 -Wl,--enable-auto-import
 CFLAGS=
 
 LEX=flex
@@ -21,15 +21,15 @@ RM=rm
 all: $(TARGET) $(OBJ)
 
 
-$(TARGET): $(MAIN) $(addprefix $(SRC_PATH)/, $(SRC))  $(OBJ)
+$(TARGET): $(MAIN) $(OBJ) $(addprefix $(SRC_PATH)/, $(SRC))
 	$(CXX) $(LDFLAGS) $(MAIN) $(OBJ) -o $(TARGET)
-	$(RM) $(OBJ)
+	@$(RM) $(OBJ)
 
 
 scanner.o: $(SRC_PATH)/scanner.l
-	$(LEX) -oscanner.c $<
-	$(CXX) -c scanner.c
-	$(RM) scanner.c
+	$(LEX) -oscanner.cpp $<
+	$(CXX) -c scanner.cpp
+	@$(RM) scanner.cpp
 
 
 SpellChecker.o: $(SRC_PATH)/SpellChecker.cpp $(SRC_PATH)/SpellChecker.h 
