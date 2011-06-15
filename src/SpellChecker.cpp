@@ -134,12 +134,6 @@ unordered_set<string> SpellChecker::getWordsWithEditDistance1(const string &word
   for (int i = 0; i < word.size(); ++i)
     splitSet.insert(make_pair<string, string>(word.substr(0, i), word.substr(i)));
 
-  // Obtain a set of words by deleting 1 character from original string
-  foreach (str_pair_t ss, splitSet) {
-    if (ss.second.size())
-      retSet.insert(ss.first + ss.second.substr(1));
-  }
-
   // Obtain a set of words by transposing nearby characters from original string
   foreach (str_pair_t ss, splitSet) {
     if (ss.second.size() > 1)
@@ -150,6 +144,12 @@ unordered_set<string> SpellChecker::getWordsWithEditDistance1(const string &word
   foreach (str_pair_t ss, splitSet) {
     for (char alphabet = 'a'; alphabet <= 'z'; ++alphabet)
       retSet.insert(ss.first + alphabet + ss.second.substr(1));
+  }
+
+  // Obtain a set of words by deleting 1 character from original string
+  foreach (str_pair_t ss, splitSet) {
+    if (ss.second.size())
+      retSet.insert(ss.first + ss.second.substr(1));
   }
 
   // Obtain a set of words by inserting 1 characters from original string
@@ -197,7 +197,6 @@ unordered_set<string> SpellChecker::getMostPossibleWords(const unordered_set<str
   foreach(string w, words) {
     int prob = 0;
     if ((prob = dict->getCount(w)) > top1.first) {
-      fprintf(stderr, "count = %d, top prob = %d\n", prob, top1.first);
       // Update words set with 3rd possible probability
       top3 = top2;
 
@@ -223,9 +222,6 @@ unordered_set<string> SpellChecker::getMostPossibleWords(const unordered_set<str
     }
   }
 
-  fprintf(stderr, "top prob = %d\n", top1.first);
-  fprintf(stderr, "second prob = %d\n", top2.first);
-  fprintf(stderr, "third prob = %d\n", top3.first);
   retSet.insert(top1.second.begin(), top1.second.end());
   retSet.insert(top2.second.begin(), top2.second.end());
   retSet.insert(top3.second.begin(), top3.second.end());
