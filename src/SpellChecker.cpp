@@ -1,10 +1,14 @@
 #include "SpellChecker.h"
 #include <cstdio>
 #include <map>
+#include <algorithm>
 #include <boost/foreach.hpp>
+#include <boost/unordered_set.hpp>
 #define foreach BOOST_FOREACH
 using std::pair;
 using std::make_pair;
+using std::map;
+using boost::unordered_set;
 
 extern int yylex();
 extern FILE *yyin;
@@ -41,24 +45,35 @@ void SpellChecker::Create(const char *textName, const char *dictName) {
 //
 // Return a list of suggestion words with higher correctness
 //
-void SpellChecker::Suggest(const char *articleName, const char *dictName) {
+void SpellChecker::Suggest(const char *articleName, const char *dictName, const int &querySize) {
 
   load(string(dictName));
 
   FILE *article = fopen(articleName, "r");
+  unordered_set<string> appeared;
 
   // Redirect yyin and close yyout
   yyin = article;
   fclose(yyout);
 
   while (yylex() != 0) {
-    vector<string> candidates = basic_suggest(string(yytext));
-    candidates.resize(10);
-    //sort(candidates.begin(), candidates.end());
-    fprintf(stdout, "%s:", yytext);
-    foreach(string pw, candidates)
-      fprintf(stdout, " %s", pw.c_str());
-    fputc('\n', stdout);
+    string word(yytext);
+    if (appeared.find(word) == appeared.end()) {
+
+      appeared.insert(word);
+
+      vector<string> candidates = basic_suggest(word, querySize);
+      candidates.resize(querySize);
+      //sort(candidates.begin(), candidates.end());
+
+      fprintf(stdout, "%s:", yytext);
+      foreach(string pw, candidates)
+        fprintf(stdout, " %s", pw.c_str());
+      fputc('\n', stdout);
+    }
+    else {
+      fprintf(stdout, "%s\n", yytext);
+    }
   }
 }
 
@@ -97,65 +112,90 @@ bool SpellChecker::check(const string &word) {
 //
 // Return a list of suggested words from the dictionary
 //
-vector<string> SpellChecker::basic_suggest(const string &word) {
+vector<string> SpellChecker::basic_suggest(const string &word, const int &querySize) {
 
-  unordered_set<string> candidateSet;
+  vector<string> candidateSet;
 
+  unordered_set<string> appeared;
+  
   // If the word is already in the dictionary, then its spelling may be correct
-  if (check(word))
-    candidateSet.insert(word);
+  if (check(word)) {
+    candidateSet.push_back(word);
+    appeared.insert(word);
+  }
 
 
   // Obtain words that with edit distance equal to 1 and also in the dictionary
-  unordered_set<string> set1 = getKnownWords(getWordsWithEditDistance1(word));
-  candidateSet.insert(set1.begin(), set1.end());
+  vector<string> set1 = getKnownWords(getWordsWithEditDistance1(word));
+  foreach(string w, set1) {
+    if (appeared.find(w) == appeared.end()) {
+      candidateSet.push_back(w);
+      appeared.insert(w);
+    }
+  }
 
 
   // Obtain words that with edit distance equal to 2 and also in the dictionary
-  unordered_set<string> set2 = getKnownWordsWithEditDistance2(word);
-  candidateSet.insert(set2.begin(), set2.end());
+  /* TODO: Fix the problem caused by words with possibility greater than ED=1 */
+  /*
+  vector<string> set2 = getKnownWordsWithEditDistance2(word);
+  foreach(string w, set2) {
+    if (appeared.find(w) == appeared.end()) {
+      candidateSet.push_back(w);
+      appeared.insert(w);
+    }
+  }
+  */
 
   // The input word must be the last choice of suggestion
-  candidateSet.insert(word);
+  if (appeared.find(word) == appeared.end()) {
+    candidateSet.push_back(word);
+    appeared.insert(word);
+  }
 
-  candidateSet = getMostPossibleWords(candidateSet);
+  candidateSet = getMostPossibleWords(candidateSet, querySize);
 
-  return vector<string>(candidateSet.begin(), candidateSet.end());
+  return candidateSet;
 }
 
 
-unordered_set<string> SpellChecker::getWordsWithEditDistance1(const string &word) {
+vector<string> SpellChecker::getWordsWithEditDistance1(const string &word) {
 
-  unordered_set<string> retSet;
+  const int EXPECT_SIZE = word.length()-1 + word.length()-2 + word.length()*26 + word.length()+2;
+  vector<string> retSet;
+  //retSet.reserve(EXPECT_SIZE);
 
   // Split word by characters
   typedef pair<string, string> str_pair_t;
-  unordered_set<str_pair_t> splitSet;
+  vector<str_pair_t> splitSet;
   for (int i = 0; i < word.size(); ++i)
-    splitSet.insert(make_pair<string, string>(word.substr(0, i), word.substr(i)));
+    splitSet.push_back(make_pair<string, string>(word.substr(0, i), word.substr(i)));
+
+
+
+  // Obtain a set of words by deleting 1 character from original string
+  foreach (str_pair_t ss, splitSet) {
+    if (ss.second.size())
+      retSet.push_back(ss.first + ss.second.substr(1));
+  }
 
   // Obtain a set of words by transposing nearby characters from original string
   foreach (str_pair_t ss, splitSet) {
     if (ss.second.size() > 1)
-      retSet.insert(ss.first + ss.second[1] + ss.second[0] + ss.second.substr(2));
+      retSet.push_back(ss.first + ss.second[1] + ss.second[0] + ss.second.substr(2));
   }
 
   // Obtain a set of words by replacing 1 characters from original string
   foreach (str_pair_t ss, splitSet) {
     for (char alphabet = 'a'; alphabet <= 'z'; ++alphabet)
-      retSet.insert(ss.first + alphabet + ss.second.substr(1));
+      retSet.push_back(ss.first + alphabet + ss.second.substr(1));
   }
 
-  // Obtain a set of words by deleting 1 character from original string
-  foreach (str_pair_t ss, splitSet) {
-    if (ss.second.size())
-      retSet.insert(ss.first + ss.second.substr(1));
-  }
 
   // Obtain a set of words by inserting 1 characters from original string
   foreach (str_pair_t ss, splitSet) {
     for (char alphabet = 'a'; alphabet <= 'z'; ++alphabet)
-      retSet.insert(ss.first + alphabet + ss.second);
+      retSet.push_back(ss.first + alphabet + ss.second);
   }
 
   return retSet;
@@ -163,68 +203,55 @@ unordered_set<string> SpellChecker::getWordsWithEditDistance1(const string &word
 
 
 
-unordered_set<string> SpellChecker::getKnownWordsWithEditDistance2(const string &word) {
-  unordered_set<string> retSet;
-  unordered_set<string> set1 = getWordsWithEditDistance1(word);
+vector<string> SpellChecker::getKnownWordsWithEditDistance2(const string &word) {
+  vector<string> retSet;
+  unordered_set<string> appeared;
+
+  vector<string> set1 = getWordsWithEditDistance1(word);
   foreach(string w1, set1) {
-    unordered_set<string> set2 = getWordsWithEditDistance1(w1);
+    vector<string> set2 = getWordsWithEditDistance1(w1);
     foreach(string w2, set2) {
-      if (check(w2))
-        retSet.insert(w2);
+      if (appeared.find(w2) == appeared.end() && check(w2))
+        retSet.push_back(w2);
+        appeared.insert(w2);
     }
   }
+
   return retSet;
 }
 
-unordered_set<string> SpellChecker::getKnownWords(const unordered_set<string> &words) {
-  unordered_set<string> knowns;
+vector<string> SpellChecker::getKnownWords(const vector<string> &words) {
+  vector<string> knowns;
+  knowns.reserve(words.size());
 
   foreach (string w, words) {
     if (check(w))
-      knowns.insert(w);
+      knowns.push_back(w);
   }
+
+  knowns.resize(knowns.size());
 
   return knowns;
 }
 
 
 
-unordered_set<string> SpellChecker::getMostPossibleWords(const unordered_set<string> &words){
+vector<string> SpellChecker::getMostPossibleWords(const vector<string> &words, const int &querySize){
 
-  pair<int, unordered_set<string> > top1, top2, top3;
-  unordered_set<string> retSet ;
+  vector<string> retSet ;
+  map<int, vector<string>, std::greater<int> > countWordsMap;
 
   foreach(string w, words) {
-    int prob = 0;
-    if ((prob = dict->getCount(w)) > top1.first) {
-      // Update words set with 3rd possible probability
-      top3 = top2;
-
-      // Update words set with 2nd possible probability
-      top2 = top1;
-
-      // Update words set with the most possible probability
-      top1.first = prob;
-      top1.second.clear();
-      top1.second.insert(w);
-    }
-    else if (prob == top2.first) {
-      top2.second.insert(w);
-    }
-    else {
-      if (prob >= top2.first) {
-        top3 = top2;
-        top2.second.insert(w);
-      }
-      else if (prob >= top3.first) {
-        top3.second.insert(w);
-      }
-    }
+    countWordsMap[dict->getCount(w)].push_back(w);
   }
 
-  retSet.insert(top1.second.begin(), top1.second.end());
-  retSet.insert(top2.second.begin(), top2.second.end());
-  retSet.insert(top3.second.begin(), top3.second.end());
+  typedef pair<int, vector<string> > istrs_pair_t;
+  int count = 0;
+  foreach(istrs_pair_t iws, countWordsMap) {
+    if (count > querySize) break;
+    retSet.insert(retSet.end(), iws.second.begin(), iws.second.end());
+    count += iws.second.size();
+  }
 
   return retSet;
 }
