@@ -53,7 +53,8 @@ void SpellChecker::Suggest(const char *articleName, const char *dictName) {
 
   while (yylex() != 0) {
     vector<string> candidates = basic_suggest(string(yytext));
-    sort(candidates.begin(), candidates.end());
+    candidates.resize(10);
+    //sort(candidates.begin(), candidates.end());
     fprintf(stdout, "%s:", yytext);
     foreach(string pw, candidates)
       fprintf(stdout, " %s", pw.c_str());
@@ -190,13 +191,44 @@ unordered_set<string> SpellChecker::getKnownWords(const unordered_set<string> &w
 
 unordered_set<string> SpellChecker::getMostPossibleWords(const unordered_set<string> &words){
 
-  int count = 0;
+  pair<int, unordered_set<string> > top1, top2, top3;
   unordered_set<string> retSet ;
 
   foreach(string w, words) {
-    if (count++ > 3) break;
-    retSet.insert(w);
+    int prob = 0;
+    if ((prob = dict->getCount(w)) > top1.first) {
+      fprintf(stderr, "count = %d, top prob = %d\n", prob, top1.first);
+      // Update words set with 3rd possible probability
+      top3 = top2;
+
+      // Update words set with 2nd possible probability
+      top2 = top1;
+
+      // Update words set with the most possible probability
+      top1.first = prob;
+      top1.second.clear();
+      top1.second.insert(w);
+    }
+    else if (prob == top2.first) {
+      top2.second.insert(w);
+    }
+    else {
+      if (prob >= top2.first) {
+        top3 = top2;
+        top2.second.insert(w);
+      }
+      else if (prob >= top3.first) {
+        top3.second.insert(w);
+      }
+    }
   }
+
+  fprintf(stderr, "top prob = %d\n", top1.first);
+  fprintf(stderr, "second prob = %d\n", top2.first);
+  fprintf(stderr, "third prob = %d\n", top3.first);
+  retSet.insert(top1.second.begin(), top1.second.end());
+  retSet.insert(top2.second.begin(), top2.second.end());
+  retSet.insert(top3.second.begin(), top3.second.end());
 
   return retSet;
 }
