@@ -6,9 +6,15 @@
 using std::pair;
 using std::make_pair;
 
-
+extern int yylex();
+extern FILE *yyin;
+extern FILE *yyout;
+extern char *yytext;
 
 auto_ptr<SpellChecker> SpellChecker::_instance;
+
+
+
 
 
 SpellChecker::SpellChecker() {
@@ -40,12 +46,17 @@ void SpellChecker::Suggest(const char *articleName, const char *dictName) {
   load(string(dictName));
 
   FILE *article = fopen(articleName, "r");
-  const int BUFSIZE = 256;
-  char buf[BUFSIZE];
-  while (fgets(buf, BUFSIZE, article) != NULL) {
-    vector<string> candidates = basic_suggest(string(buf));
+
+  // Redirect yyin and close yyout
+  yyin = article;
+  fclose(yyout);
+
+  while (yylex() != 0) {
+    fprintf(stderr, "Now getting basic suggestion ... \n");
+    vector<string> candidates = basic_suggest(string(yytext));
+    fprintf(stderr, "Got basic suggestion list\n");
     sort(candidates.begin(), candidates.end());
-    fprintf(stdout, "%s:", buf);
+    fprintf(stdout, "%s:", yytext);
     foreach(string pw, candidates)
       fprintf(stdout, " %s", pw.c_str());
     fputc('\n', stdout);
@@ -91,20 +102,34 @@ vector<string> SpellChecker::basic_suggest(const string &word) {
 
   unordered_set<string> candidateSet;
 
+  fprintf(stderr, "Inserting original word %s ...\n", word.c_str());
+
   // If the word is already in the dictionary, then its spelling may be correct
   if (check(word))
     candidateSet.insert(word);
+
+  fprintf(stderr, "Done.\n");
+  fprintf(stderr, "Obtaining set with edit distance = 1 ...\n");
 
   // Obtain words that with edit distance equal to 1 and also in the dictionary
   unordered_set<string> set1 = getKnownWords(getWordsWithEditDistance1(word));
   candidateSet.insert(set1.begin(), set1.end());
 
+  fprintf(stderr, "Done. Set size = %d\n, Candidate Set size = %d", set1.size(), candidateSet.size());
+  fprintf(stderr, "Obtaining set with edit distance = 2 ...\n");
+
   // Obtain words that with edit distance equal to 2 and also in the dictionary
   unordered_set<string> set2 = getKnownWordsWithEditDistance2(word);
   candidateSet.insert(set2.begin(), set2.end());
 
+  fprintf(stderr, "Done. Set size = %d\n, Candidate Set size = %d", set1.size(), candidateSet.size());
+  fprintf(stderr, "Inserting original word ...\n");
+
   // The input word must be the last choice of suggestion
   candidateSet.insert(word);
+
+  fprintf(stderr, "Done. Candidate Set size = %d\n", candidateSet.size());
+  fprintf(stderr, "Now getting the most 10 possible words ... \n");
 
   candidateSet = getMostPossibleWords(candidateSet);
 
