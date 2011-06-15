@@ -99,9 +99,9 @@ void Dictionary::read(const string &file) {
 // Load the binary file into internal memory format
 //
 void Dictionary::load(const string &file) {
-  FILE *corpus = fopen(file.c_str(), "r");
+  FILE *dict = fopen(file.c_str(), "r");
   
-  fclose(corpus);
+  fclose(dict);
 }
 
 
