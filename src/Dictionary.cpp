@@ -104,11 +104,10 @@ void Dictionary::load(const string &file) {
   printf("corpus length = %d\n", length);
   root = new struct Dict[length];
   for(i = 0; i < length; i++){
-    fscanf(corpus, "%s", buf);
+    fscanf(corpus, "%s %d", buf, &((root+i)->count));
 	(root+i)->word = new char[strlen(buf) + 1];
 	strcpy((root+i)->word, buf);
-	(root+i)->count = 0;
-	printf("load word: %s\n", (root+i)->word);
+	printf("load word: %s %d\n", (root+i)->word, (root+i)->count);
   }
   printf("load OK!\n");
   fclose(corpus);
@@ -157,7 +156,7 @@ void Dictionary::preDictDump(struct preDict *preroot, FILE *dump){
   static int count = 0;
   if(preroot != NULL){
     preDictDump(preroot->leftPtr, dump);
-    fprintf(dump, "%s\n", preroot->word);
+    fprintf(dump, "%s %d\n", preroot->word, preroot->count);
     (root + count)->count = preroot->count;
     (root + count)->word = new char [strlen(preroot->word) + 1];
     strcpy((root + count)->word, preroot->word);
