@@ -6,9 +6,11 @@
 #include <vector>
 #include <string>
 #include <memory>
-using std::string;
+#include <boost/unordered_set.hpp>
 using std::vector;
+using std::string;
 using std::auto_ptr;
+using boost::unordered_set;
 
 
 class SpellChecker {
@@ -21,15 +23,21 @@ class SpellChecker {
       return _instance.get();
     }
 
-    void Create(const char *text, const char *dict);
-    vector<string> Suggest(const char *article, const char *dict);
+    void Create(const char *textName, const char *dictName);
+    void Suggest(const char *articleName, const char *dictName);
     
 
   private:
     void build(const string &textFile, const string &dictionaryFile);
     void load(const string &idictionaryFile);
-    void check(const string &word);
+    bool check(const string &word);
     vector<string> basic_suggest(const string &word);
+
+
+    unordered_set<string> getWordsWithEditDistance1(const string &word);
+    unordered_set<string> getKnownWordsWithEditDistance2(const string &word);
+    unordered_set<string> getKnownWords(const unordered_set<string> &words);
+    unordered_set<string> getMostPossibleWords(const unordered_set<string> &words);
 
 
   protected:

@@ -20,7 +20,7 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  for (int i = 1; i < argc; i+=2)
+  for (int i = 1; i < argc; i+=3)
     if (strcmp(argv[i], "-b") == 0)
     {
       // TODO: generate dictionary from argv[i+1] and output to argv[i+2]

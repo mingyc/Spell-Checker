@@ -21,7 +21,7 @@ RM=rm
 all: $(TARGET) $(OBJ)
 
 
-$(TARGET): $(MAIN) $(addprefix $(SRC_PATH)/, $(SRC))  $(OBJ)
+$(TARGET): $(MAIN) $(OBJ) $(addprefix $(SRC_PATH)/, $(SRC))
 	$(CXX) $(LDFLAGS) $(MAIN) $(OBJ) -o $(TARGET)
 	@$(RM) $(OBJ)
 
