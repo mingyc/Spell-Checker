@@ -78,7 +78,7 @@ void Dictionary::write(const string &file) {
   FILE *dump = fopen(file.c_str(), "w+");
   root = new struct Dict[length];
   preDictDump(preroot, dump);
-  preDictDestory(preroot);
+  preDictDestroy(preroot);
   preroot = NULL;
   fclose(dump);
 }
@@ -115,10 +115,10 @@ void Dictionary::preDictDump(struct preDict *preroot, FILE *dump){
   }
 }
 
-void Dictionary::preDictDestory(struct preDict *preroot){
+void Dictionary::preDictDestroy(struct preDict *preroot){
   if(preroot != NULL){
-    preDictDestory(preroot->leftPtr);
-    preDictDestory(preroot->rightPtr);
+    preDictDestroy(preroot->leftPtr);
+    preDictDestroy(preroot->rightPtr);
     delete[] preroot->word;
     delete[] preroot;
   }

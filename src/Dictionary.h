@@ -31,7 +31,7 @@ class Dictionary {
     void write(const string &file);
 	void preDictAdd(struct preDict **root, const char *word);
 	void preDictDump(struct preDict *root, FILE *dump);
-	void preDictDestory(struct preDict *preroot);
+	void preDictDestroy(struct preDict *preroot);
 	struct Dict *DictFind(struct Dict *root, const char *target);
 	
   private:
