@@ -39,8 +39,12 @@ bool Dictionary::exist(const string &word) {
 //    The word to be counted in this dictionary
 // Return the number of apperances of this word
 //
-int  Dictionary::getCount(const string &word) {
-	return DictFind(root, word.c_str())->count;
+int Dictionary::getCount(const string &word){
+  struct Dict *tmpDict = DictFind(root, word.c_str());
+  if(tmpDict == NULL)
+    return -1;
+  else
+    return tmpDict->count;
 }
 
 
