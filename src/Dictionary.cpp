@@ -78,7 +78,7 @@ void Dictionary::read(const string &file) {
 
   // redirect yyin and close yyout
   yyin = corpus;
-  fclose(yyout);
+  //fclose(yyout);
   
   // add words from yylex to dictionary
   while(yylex() != 0){

@@ -9,7 +9,8 @@ SRC_PATH=src
 MAIN:=$(addprefix $(SRC_PATH)/, $(MAIN))
 OBJ=scanner.o $(SRC:.cpp=.o)
 
-LDFLAGS=-O3 -Wl,--enable-auto-import
+#LDFLAGS=-O3 -Wl,--enable-auto-import
+LDFLAGS=-O3
 CFLAGS=
 
 LEX=flex

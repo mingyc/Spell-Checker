@@ -54,7 +54,7 @@ void SpellChecker::Suggest(const char *articleName, const char *dictName, const 
 
   // Redirect yyin and close yyout
   yyin = article;
-  fclose(yyout);
+  //fclose(yyout);
 
   while (yylex() != 0) {
     string word(yytext);
