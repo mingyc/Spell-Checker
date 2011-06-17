@@ -179,6 +179,7 @@ vector<string> SpellChecker::getWordsWithEditDistance1(const string &word) {
   vector<str_pair_t> splitSet;
   for (int i = 0; i < word.size(); ++i)
     splitSet.push_back(make_pair<string, string>(word.substr(0, i), word.substr(i)));
+  splitSet.push_back(make_pair<string, string>(word, string("")));
 
 
 
@@ -197,7 +198,10 @@ vector<string> SpellChecker::getWordsWithEditDistance1(const string &word) {
   // Obtain a set of words by replacing 1 characters from original string
   foreach (str_pair_t ss, splitSet) {
     for (char alphabet = 'a'; alphabet <= 'z'; ++alphabet)
-      retSet.push_back(ss.first + alphabet + ss.second.substr(1));
+      if (ss.second.size() > 1)
+        retSet.push_back(ss.first + alphabet + ss.second.substr(1));
+      else
+        retSet.push_back(ss.first + alphabet);
   }
 
 
@@ -206,6 +210,7 @@ vector<string> SpellChecker::getWordsWithEditDistance1(const string &word) {
     for (char alphabet = 'a'; alphabet <= 'z'; ++alphabet)
       retSet.push_back(ss.first + alphabet + ss.second);
   }
+
 
   return retSet;
 }
