@@ -22,7 +22,7 @@ str     (({letter}+([-'_]|{letter}*){letter}+)|{letter})
 %%
 
 void installSTR(){
-	int i;
+	int i, j;
 
   if (wordPtr != NULL)
     wordPtr = (char *)realloc(wordPtr, (yyleng+1) * sizeof(char));
@@ -30,11 +30,13 @@ void installSTR(){
     wordPtr = (char *)malloc((yyleng+1) * sizeof(char));
 
   strncpy(wordPtr, yytext, yyleng);
-	for(i = 0; i < yyleng; i++){
-    if (!isalpha(yytext[i])) break;
-		*(wordPtr + i) = tolower(*(yytext + i));
+	for(i = j = 0; i < yyleng; i++){
+    if (yytext[i] == '\'') break;
+    if (yytext[i] == '-')  
+      memcpy(yytext+i, yytext+i+1, strlen(yytext+i+1)+1);
+		wordPtr[j++] = tolower(yytext[i]);
 	}
-	*(wordPtr + i) = '\0';
+	*(wordPtr + j) = '\0';
   *(yytext + i) = '\0';
 }
 

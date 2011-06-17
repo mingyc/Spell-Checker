@@ -60,8 +60,6 @@ void SpellChecker::Suggest(const char *articleName, const char *dictName, const 
   while (yylex() != 0) {
     string word(wordPtr);
 
-    fprintf(stderr, "Now checking %s(%d) ...\n", wordPtr, check(word));
-
     if (check(word)) continue;
 
     if (appeared.find(word) == appeared.end()) {
@@ -164,7 +162,7 @@ vector<string> SpellChecker::basic_suggest(const string &word, const int &queryS
   }
   */
 
-  candidateSet = getMostPossibleWords(candidateSet, querySize);
+  //candidateSet = getMostPossibleWords(candidateSet, querySize);
 
   return candidateSet;
 }
