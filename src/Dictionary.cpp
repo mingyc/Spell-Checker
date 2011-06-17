@@ -7,6 +7,7 @@ extern int yylex();
 extern FILE *yyin;
 extern FILE *yyout;
 extern char *yytext;
+extern char *wordPtr;
 
 
 //
@@ -82,7 +83,7 @@ void Dictionary::read(const string &file) {
   
   // add words from yylex to dictionary
   while(yylex() != 0){
-    if(preDictAdd(&preroot, yytext) == true)
+    if(preDictAdd(&preroot, wordPtr) == true)
       length++;
   }
 

@@ -2,6 +2,7 @@
     /* definitions of manifest constants */
 	#include<stdio.h>
 	#include<ctype.h>
+  #include <string.h>
 	#define STR 1
 	void installSTR();
 	char* wordPtr = NULL;
@@ -22,10 +23,19 @@ str     (({letter}+([-'_]|{letter}*){letter}+)|{letter})
 
 void installSTR(){
 	int i;
+
+  if (wordPtr != NULL)
+    wordPtr = (char *)realloc(wordPtr, (yyleng+1) * sizeof(char));
+  else
+    wordPtr = (char *)malloc((yyleng+1) * sizeof(char));
+
+  strncpy(wordPtr, yytext, yyleng);
 	for(i = 0; i < yyleng; i++){
-		*(yytext + i) = tolower(*(yytext + i));
+    if (!isalpha(yytext[i])) break;
+		*(wordPtr + i) = tolower(*(yytext + i));
 	}
-	*(yytext + yyleng) = '\0';
+	*(wordPtr + i) = '\0';
+  *(yytext + i) = '\0';
 }
 
 int yywrap(){

@@ -14,6 +14,7 @@ extern int yylex();
 extern FILE *yyin;
 extern FILE *yyout;
 extern char *yytext;
+extern char *wordPtr;
 
 auto_ptr<SpellChecker> SpellChecker::_instance;
 
@@ -57,23 +58,31 @@ void SpellChecker::Suggest(const char *articleName, const char *dictName, const 
   //fclose(yyout);
 
   while (yylex() != 0) {
-    string word(yytext);
+    string word(wordPtr);
+
+    fprintf(stderr, "Now checking %s(%d) ...\n", wordPtr, check(word));
+
+    if (check(word)) continue;
+
     if (appeared.find(word) == appeared.end()) {
 
       appeared.insert(word);
 
+
       vector<string> candidates = basic_suggest(word, querySize);
-      candidates.resize(querySize);
-      //sort(candidates.begin(), candidates.end());
+      //candidates.resize(querySize);
+      sort(candidates.begin(), candidates.end());
 
       fprintf(stdout, "%s:", yytext);
       foreach(string pw, candidates)
         fprintf(stdout, " %s", pw.c_str());
       fputc('\n', stdout);
     }
+    /*
     else {
       fprintf(stdout, "%s\n", yytext);
     }
+    */
   }
 }
 
@@ -148,10 +157,12 @@ vector<string> SpellChecker::basic_suggest(const string &word, const int &queryS
   */
 
   // The input word must be the last choice of suggestion
+  /* 20110617 Commented by Milnex: the spec doesn't require this
   if (appeared.find(word) == appeared.end()) {
     candidateSet.push_back(word);
     appeared.insert(word);
   }
+  */
 
   candidateSet = getMostPossibleWords(candidateSet, querySize);
 
