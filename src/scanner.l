@@ -5,8 +5,8 @@
 	#include<string.h>
 	#define STR 1
 	void installSTR();
-	char* dicttext = NULL;
-	char* spelltext = NULL;
+	char *dicttext = NULL;
+	char *spelltext = NULL;
 %}
 
 delim   [ \t\n\r]
@@ -26,10 +26,11 @@ str 	{letter}[[:alnum:][:punct:]]*
 
 void installSTR(){
 	int i, j, k;
-
-	
-    dicttext = (char *)malloc((yyleng+1) * sizeof(char));
-	spelltext = (char *)malloc((yyleng+1) * sizeof(char));
+  /* TODO:
+     This might cause huge memory leakage. 
+     Don't know why realloc cannot work properly  */
+    dicttext  = (char *)malloc((yyleng+1) * sizeof(char));
+    spelltext = (char *)malloc((yyleng+1) * sizeof(char));
 
 	for(i = j = k = 0; i < yyleng; i++){
 		if (yytext[i] == '\'') break;
@@ -43,6 +44,11 @@ void installSTR(){
 	*(spelltext + k) = '\0';
 }
 
+//
+// int yywrap()
+//   This function will be call at the end of input file stream.
+//   Return 1 then flex will stop parsing.
+//
 int yywrap(){
 	return 1;
 }

@@ -1,7 +1,12 @@
 #include "Dictionary.h"
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+
+#include <unistd.h>
+#define  FD_READ  0
+#define  FD_WRITE 1
 
 extern int yylex();
 extern FILE *yyin;
@@ -122,7 +127,12 @@ void Dictionary::load(const string &file) {
 // Dump internal data structure into this file in binary format
 //
 void Dictionary::dump(const string &file) {
-  FILE *dump = fopen(file.c_str(), "w+");
+  //FILE *dump = fopen(file.c_str(), "w+");
+  
+  int pfd[2];
+  assert(pipe(pfd) != -1);
+  FILE *dump = fdopen(pfd[FD_WRITE], "w+");
+
   root = new struct Dict[length];
   fprintf(dump, "%d\n", length);
   preDictDump(preroot, dump);
