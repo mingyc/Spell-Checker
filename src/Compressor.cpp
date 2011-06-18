@@ -27,9 +27,9 @@ void Compressor::Compress(int srcFd, const char *destFileName) {
   outFile = fopen ( destFileName , "w" );
   b = BZ2_bzWriteOpen ( &bzerror, 
                         outFile, 
-                        9,            // int blockSize100k: specifies the block size to be used for compression between 1, 9]. 9 gives the best compression but takes most memory.
-                        0,            // int verbosity: specifies verbose monitoring/debugging output. 0: silent, 4:most
-                        30            // int workFactor: set this carefully. [0, 250]
+                        blockSize100k,  // int blockSize100k: specifies the block size to be used for compression between 1, 9]. 9 gives the best compression but takes most memory.
+                        verbosity,      // int verbosity: specifies verbose monitoring/debugging output. 0: silent, 4:most
+                        workFactor      // int workFactor: set this carefully. [0, 250]
                       );
   if (bzerror != BZ_OK) {
      BZ2_bzWriteClose ( &bzerror, b, 1, NULL, NULL );
@@ -68,7 +68,7 @@ void Compressor::Decompress(const char *srcFileName, int destFd) {
   b = BZ2_bzReadOpen ( &bzerror,
       inFile,
       0,            // int small:
-      0,            // int verbosity: specifies verbose monitoring/debugging output. 0: silent, 4:most
+      verbosity,    // int verbosity: specifies verbose monitoring/debugging output. 0: silent, 4:most
       NULL,         // void *unused:
       0             // int nUnused:
       );
