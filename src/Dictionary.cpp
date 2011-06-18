@@ -50,7 +50,6 @@ Dictionary::~Dictionary() {
 // Return true if found in internal structure
 //
 bool Dictionary::exist(const string &word) {
-  //printf("target: %s, result: %d\n", word.c_str(), (bool)DictFind(root, word.c_str()));
   return (bool)DictFind(root, word.c_str());
 }
 
@@ -62,11 +61,12 @@ bool Dictionary::exist(const string &word) {
 // Return the number of apperances of this word
 //
 int Dictionary::getCount(const string &word){
-  struct Dict *tmpDict = DictFind(root, word.c_str());
+  /*struct Dict *tmpDict = DictFind(root, word.c_str());
   if(tmpDict == NULL)
     return -1;
   else
-    return tmpDict->count;
+    return tmpDict->count;*/
+  return -1;
 }
 
 
@@ -84,8 +84,9 @@ void Dictionary::read(const string &file) {
   
   // add words from yylex to dictionary
   while(yylex() != 0){
-    if(preDictAdd(&preroot, dicttext) == true)
-      length++;
+    //if(preDictAdd(&preroot, dicttext) == true)
+	preDictAdd(&preroot, dicttext);
+    length++;
   }
 
   fclose(corpus);
@@ -105,7 +106,8 @@ void Dictionary::load(const string &file) {
   fscanf(dictFile, "%d", &length);
   root = new struct Dict[length];
   for(i = 0; i < length; i++){
-    fscanf(dictFile, "%s %d", buf, &((root+i)->count));
+    //fscanf(dictFile, "%s %d", buf, &((root+i)->count));
+	fscanf(dictFile, "%s", buf);
     (root+i)->word = new char[strlen(buf) + 1];
     strcpy((root+i)->word, buf);
   }
@@ -129,7 +131,8 @@ void Dictionary::dump(const string &file) {
   fclose(dump);
 }
 
-bool Dictionary::preDictAdd(struct preDict **preroot, char *word){
+//bool Dictionary::preDictAdd(struct preDict **preroot, char *word){
+void Dictionary::preDictAdd(struct preDict **preroot, char *word){
   // store pre dictionary by binary tree
   if(*preroot == NULL){
     *preroot = new struct preDict[1];
@@ -137,18 +140,23 @@ bool Dictionary::preDictAdd(struct preDict **preroot, char *word){
     (*preroot)->leftPtr = (*preroot)->rightPtr = NULL;
     strcpy((*preroot)->word, word);
 	free(word);
-    (*preroot)->count = 1;
-    return 1;
+    //(*preroot)->count = 1;
+    //return 1;
   }else{
     if(strcmp((*preroot)->word, word) > 0){
-      return preDictAdd(&((*preroot)->leftPtr), word);
-    }else if(strcmp((*preroot)->word, word) < 0){
-      return preDictAdd(&((*preroot)->rightPtr), word);
-    }else{
+      //return preDictAdd(&((*preroot)->leftPtr), word);
+	  preDictAdd(&((*preroot)->leftPtr), word);
+	  free(word);
+    //}else if(strcmp((*preroot)->word, word) < 0){
+	}else{
+      //return preDictAdd(&((*preroot)->rightPtr), word);
+	  preDictAdd(&((*preroot)->rightPtr), word);
+	  free(word);
+    }/*else{
       (*preroot)->count += 1;
 	  free(word);
       return 0;
-    }
+    }*/
   }
 }
 
@@ -157,8 +165,9 @@ void Dictionary::preDictDump(struct preDict *preroot, FILE *dump){
   static int count = 0;
   if(preroot != NULL){
     preDictDump(preroot->leftPtr, dump);
-    fprintf(dump, "%s %d\n", preroot->word, preroot->count);
-    (root + count)->count = preroot->count;
+    //fprintf(dump, "%s %d\n", preroot->word, preroot->count);
+	fprintf(dump, "%s\n", preroot->word);
+    //(root + count)->count = preroot->count;
     (root + count)->word = new char [strlen(preroot->word) + 1];
     strcpy((root + count)->word, preroot->word);
     preDictDump(preroot->rightPtr, dump);

@@ -7,14 +7,14 @@ using std::string;
 // pre Dictionary
 struct preDict{
   char *word;
-  int count;
+  //int count;
   struct preDict *leftPtr;
   struct preDict *rightPtr;
 };
 
 // Dictionary
 struct Dict{
-  int count;
+  //int count;
   char *word;
 };
 
@@ -83,7 +83,8 @@ class Dictionary {
     //
     void dump(const string &file);
 
-    bool preDictAdd(struct preDict **root, char *word);
+    //bool preDictAdd(struct preDict **root, char *word);
+	void preDictAdd(struct preDict **root, char *word);
     void preDictDump(struct preDict *root, FILE *dump);
     void preDictDestroy(struct preDict *preroot);
     struct Dict *DictFind(struct Dict *root, const char *target);
