@@ -2,20 +2,23 @@
 #define __DICTIONARY_H__
 
 #include <string>
+
+#define DICT_WIDTH 26
+
 using std::string;
 
 // pre Dictionary
-struct preDict{
+/*struct preDict{
   char *word;
-  //int count;
+  int count;
   struct preDict *leftPtr;
   struct preDict *rightPtr;
-};
+};*/
 
 // Dictionary
 struct Dict{
-  //int count;
-  char *word;
+  bool exist;
+  struct Dict *next[DICT_WIDTH];
 };
 
 class Dictionary {
@@ -84,16 +87,19 @@ class Dictionary {
     void dump(const string &file);
 
     //bool preDictAdd(struct preDict **root, char *word);
-	void preDictAdd(struct preDict **root, char *word);
-    void preDictDump(struct preDict *root, FILE *dump);
-    void preDictDestroy(struct preDict *preroot);
-    struct Dict *DictFind(struct Dict *root, const char *target);
+	//void preDictAdd(struct preDict **root, char *word);
+    //void preDictDump(struct preDict *root, FILE *dump);
+    //void preDictDestroy(struct preDict *preroot);
+    void DictAdd(struct Dict *root, char *word);
+	bool DictFind(struct Dict *root, const char *target);
+	void DictDestroy(struct Dict *root);
+	void DictDump(struct Dict *root, FILE *dump);
 
   private:
 
-    struct preDict *preroot;
+    //struct preDict *preroot;
     struct Dict *root;
-    int length;
+    //int length;
 };
 
 
