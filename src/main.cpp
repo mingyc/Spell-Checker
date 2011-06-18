@@ -24,7 +24,7 @@ int main(int argc, char **argv)
   for (int i = 1; i < argc; i+=3)
     if (strcmp(argv[i], "-b") == 0)
     {
-	  Dictionary dict(argv[i+1], argv[i+2]);
+	  //Dictionary dict(argv[i+1], argv[i+2]);
       // TODO: generate dictionary from argv[i+1] and output to argv[i+2]
       SpellChecker::getInstance()->Create(argv[i+1], argv[i+2]);
     }

@@ -17,7 +17,7 @@ using std::string;
 
 // Dictionary
 struct Dict{
-  bool exist;
+  int exist;
   struct Dict *next[DICT_WIDTH];
 };
 

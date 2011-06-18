@@ -32,7 +32,7 @@ Dictionary::Dictionary(const string &srcTxtFileName, const string &destBinFileNa
   //length = 0;
   read(srcTxtFileName);
   dump(destBinFileName);
-  printf("construct OK\n");
+  //printf("construct OK\n");
 }
 
 //
@@ -100,6 +100,7 @@ void Dictionary::read(const string &file) {
     //length++;
   }
 
+
   fclose(corpus);
   //printf("read OK\n");
 }
@@ -139,10 +140,10 @@ void Dictionary::load(const string &file) {
     //  strcpy((root+i)->word, buf);
     //}
 	//printf("begin DictLoad...\n");
-	fgetc(dictFile);
 	
+    fgetc(dictFile);
 	DictLoad(root, dictFile);
-	//printf("DictLoad OK\n");
+	//printf("%d\n", fgetc(dictFile));
 
     fclose(dictFile);
     wait(NULL);
@@ -151,6 +152,34 @@ void Dictionary::load(const string &file) {
     // error 
   }
   //printf("load OK\n");
+
+
+  //int i, j;
+ /* int j;
+  struct Dict *tmp;
+  for(i = 0; i < DICT_WIDTH; i++){
+	tmp = root->next[i];
+  	if(tmp != NULL){
+		if(tmp->exist){
+			printf("%c 1\n", i+'a');
+		}else{
+			printf("%c 0\n", i+'a');
+		}
+
+		for(j = 0; j < DICT_WIDTH; j++){
+			if(tmp->next[j] != NULL && tmp->next[j]->exist)
+				printf("1 ");
+			else
+				printf("0 ");
+		}
+		printf("\n");
+
+	}else{
+		printf("%c X\n\n", i+'a');
+	}
+  }
+  printf("\n");*/
+
 }
 
 
@@ -240,8 +269,8 @@ void Dictionary::dump(const string &file) {
 
 void Dictionary::DictLoad(struct Dict *root, FILE *dictFile){
 
-	int c, index=0;
-	bool exist;
+	int c, index = 0;
+	int exist = 0;
 
 	//printf("in DictLoad\n");
 	while((c=fgetc(dictFile))!=')'){
@@ -250,15 +279,19 @@ void Dictionary::DictLoad(struct Dict *root, FILE *dictFile){
 		}else{
 			
 			if(isupper(c)){
-				exist = true;
+				exist = 1;
 				c = tolower(c);
+			}else{
+				exist = 0;
 			}
 
 			index = c - 'a';
 			root->next[index] = (struct Dict *)calloc(1, sizeof(struct Dict));
 			
-			if(exist == true){
-				root->next[index]->exist = true;
+			if(exist){
+				root->next[index]->exist = 1;
+			}else{
+				root->next[index]->exist = 0;
 			}
 		}
 	}
@@ -270,12 +303,13 @@ void Dictionary::DictAdd(struct Dict *root, char *word){
 
 	for(i = 0; ; i++){
 		if(word[i] == '\0'){
-			currentPtr->exist = true;
+			currentPtr->exist = 1;
 			break;
 		}else{
 			//printf("word[i] - 'a' = %d\n", word[i] - 'a');
 			if(currentPtr->next[word[i]-'a'] == NULL){
 				currentPtr->next[word[i]-'a'] = (struct Dict *)calloc(1, sizeof(struct Dict));
+				currentPtr->next[word[i]-'a']->exist = 0;
 			}
 			currentPtr = currentPtr->next[word[i]-'a'];
 		}
@@ -296,7 +330,7 @@ void Dictionary::DictDump(struct Dict *root, FILE *dump){
 				fputc('(', dump);
 				//fprintf(dump, "(");
 			}
-			if(root->next[i]->exist == true){
+			if(root->next[i]->exist){
 				fputc(toupper(i+'a'), dump);
 				//fprintf(dump, "%c", toupper(i+'a'));
 			}else{
@@ -341,7 +375,7 @@ bool Dictionary::DictFind(struct Dict *root, const char *target){
 
   for(i = 0; ; i++){
   	if(target[i] == '\0'){
-		if(currentPtr->exist == true){
+		if(currentPtr->exist){
 			return true;
 		}else{
 			return false;
