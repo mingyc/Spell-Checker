@@ -7,7 +7,7 @@ extern int yylex();
 extern FILE *yyin;
 extern FILE *yyout;
 extern char *yytext;
-extern char *wordPtr;
+extern char *dicttext;
 
 
 //
@@ -50,6 +50,7 @@ Dictionary::~Dictionary() {
 // Return true if found in internal structure
 //
 bool Dictionary::exist(const string &word) {
+  //printf("target: %s, result: %d\n", word.c_str(), (bool)DictFind(root, word.c_str()));
   return (bool)DictFind(root, word.c_str());
 }
 
@@ -83,7 +84,7 @@ void Dictionary::read(const string &file) {
   
   // add words from yylex to dictionary
   while(yylex() != 0){
-    if(preDictAdd(&preroot, wordPtr) == true)
+    if(preDictAdd(&preroot, dicttext) == true)
       length++;
   }
 
@@ -128,13 +129,14 @@ void Dictionary::dump(const string &file) {
   fclose(dump);
 }
 
-bool Dictionary::preDictAdd(struct preDict **preroot, const char *word){
+bool Dictionary::preDictAdd(struct preDict **preroot, char *word){
   // store pre dictionary by binary tree
   if(*preroot == NULL){
     *preroot = new struct preDict[1];
     (*preroot)->word = new char[strlen(word) + 1];
     (*preroot)->leftPtr = (*preroot)->rightPtr = NULL;
     strcpy((*preroot)->word, word);
+	free(word);
     (*preroot)->count = 1;
     return 1;
   }else{
@@ -144,6 +146,7 @@ bool Dictionary::preDictAdd(struct preDict **preroot, const char *word){
       return preDictAdd(&((*preroot)->rightPtr), word);
     }else{
       (*preroot)->count += 1;
+	  free(word);
       return 0;
     }
   }

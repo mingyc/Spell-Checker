@@ -13,8 +13,8 @@ using boost::unordered_set;
 extern int yylex();
 extern FILE *yyin;
 extern FILE *yyout;
-extern char *yytext;
-extern char *wordPtr;
+extern char *spelltext;
+extern char *dicttext;
 
 auto_ptr<SpellChecker> SpellChecker::_instance;
 
@@ -58,7 +58,7 @@ void SpellChecker::Suggest(const char *articleName, const char *dictName, const 
   //fclose(yyout);
 
   while (yylex() != 0) {
-    string word(wordPtr);
+    string word(dicttext);
 
     if (check(word)) continue;
 
@@ -71,14 +71,14 @@ void SpellChecker::Suggest(const char *articleName, const char *dictName, const 
       //candidates.resize(querySize);
       sort(candidates.begin(), candidates.end());
 
-      fprintf(stdout, "%s:", yytext);
+      fprintf(stdout, "%s:", spelltext);
       foreach(string pw, candidates)
         fprintf(stdout, " %s", pw.c_str());
       fputc('\n', stdout);
     }
     /*
     else {
-      fprintf(stdout, "%s\n", yytext);
+      fprintf(stdout, "%s\n", spelltext);
     }
     */
   }
