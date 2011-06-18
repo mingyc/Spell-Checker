@@ -90,7 +90,8 @@ class Dictionary {
 	//void preDictAdd(struct preDict **root, char *word);
     //void preDictDump(struct preDict *root, FILE *dump);
     //void preDictDestroy(struct preDict *preroot);
-    void DictAdd(struct Dict *root, char *word);
+    void DictLoad(struct Dict *root, FILE *dictFile);
+	void DictAdd(struct Dict *root, char *word);
 	bool DictFind(struct Dict *root, const char *target);
 	void DictDestroy(struct Dict *root);
 	void DictDump(struct Dict *root, FILE *dump);

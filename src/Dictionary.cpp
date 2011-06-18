@@ -32,7 +32,7 @@ Dictionary::Dictionary(const string &srcTxtFileName, const string &destBinFileNa
   //length = 0;
   read(srcTxtFileName);
   dump(destBinFileName);
-  //printf("construct OK\n");
+  printf("construct OK\n");
 }
 
 //
@@ -48,7 +48,7 @@ Dictionary::Dictionary(const string &srcBinFileName) {
 }
 
 Dictionary::~Dictionary() {
-  //DictDestroy(root);
+  DictDestroy(root);
 }
 
 //
@@ -114,7 +114,7 @@ void Dictionary::read(const string &file) {
 void Dictionary::load(const string &file) {
   //FILE *dictFile = fopen(file.c_str(), "r");
 
-/*  int i;
+  int i;
   char buf[256];
   pid_t cpid = 0;
   int pfd[2];
@@ -129,20 +129,26 @@ void Dictionary::load(const string &file) {
   }
   else if (cpid > 0) { // main process
 
-    fscanf(dictFile, "%d", &length);
-    root = new struct Dict[length];
-    for(i = 0; i < length; i++){
-      //fscanf(dictFile, "%s %d", buf, &((root+i)->count));
-      fscanf(dictFile, "%s", buf);
-      (root+i)->word = new char[strlen(buf) + 1];
-      strcpy((root+i)->word, buf);
-    }
+    //fscanf(dictFile, "%d", &length);
+    //root = new struct Dict[length];
+    //for(i = 0; i < length; i++){
+    //  fscanf(dictFile, "%s %d", buf, &((root+i)->count));
+    //  fscanf(dictFile, "%s", buf);
+    //  (root+i)->word = new char[strlen(buf) + 1];
+    //  strcpy((root+i)->word, buf);
+    //}
+	//printf("begin DictLoad...\n");
+	fgetc(dictFile);
+	DictLoad(root, dictFile);
+	//printf("DictLoad OK\n");
+
     fclose(dictFile);
     wait(NULL);
   }
   else {
     // error 
-  }*/
+  }
+  //printf("load OK\n");
 }
 
 
@@ -230,6 +236,32 @@ void Dictionary::dump(const string &file) {
   }
 }*/
 
+void Dictionary::DictLoad(struct Dict *root, FILE *dictFile){
+
+	int c, index=0;
+	bool exist;
+
+	//printf("in DictLoad\n");
+	while((c=fgetc(dictFile))!=')'){
+		if(c == '('){
+			DictLoad(root->next[index], dictFile);
+		}else{
+			
+			if(isupper(c)){
+				exist = true;
+				c = tolower(c);
+			}
+
+			index = c - 'a';
+			root->next[index] = (struct Dict *)calloc(1, sizeof(struct Dict));
+			
+			if(exist == true){
+				root->next[index]->exist = true;
+			}
+		}
+	}
+}
+
 void Dictionary::DictAdd(struct Dict *root, char *word){
 	int i;
 	struct Dict* currentPtr = root;
@@ -259,27 +291,34 @@ void Dictionary::DictDump(struct Dict *root, FILE *dump){
 		if(root->next[i] != NULL){
 			if(leaf == true){
 				leaf = false;
-				//fputc('(', dump);
-				fprintf(dump, "(");
+				fputc('(', dump);
+				//fprintf(dump, "(");
 			}
 			if(root->next[i]->exist == true){
-				//fputc(toupper(i+'a'), dump);
-				fprintf(dump, "%c", toupper(i+'a'));
+				fputc(toupper(i+'a'), dump);
+				//fprintf(dump, "%c", toupper(i+'a'));
 			}else{
-				//fputc(i+'a', dump);
-				fprintf(dump, "%c", i+'a');
+				fputc(i+'a', dump);
+				//fprintf(dump, "%c", i+'a');
 			}
 			DictDump(root->next[i], dump); 
 		}
 	}
 	if(leaf == false){
-		fprintf(dump, ")");
-		//fputc(')', dump);
+		//fprintf(dump, ")");
+		fputc(')', dump);
 	}
 }
 
-void Dictionary::DictDestroy(struct Dict *preroot){
+void Dictionary::DictDestroy(struct Dict *root){
 
+	int i;
+	if(root != NULL){
+		for(i = 0; i < DICT_WIDTH; i++){
+			DictDestroy(root->next[i]);
+		}
+	}
+	free(root);
 }
 
 
