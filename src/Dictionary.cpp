@@ -120,6 +120,7 @@ void Dictionary::load(const string &file) {
   int pfd[2];
   assert(pipe(pfd) != -1);
   FILE *dictFile = fdopen(pfd[FD_READ], "r");
+  //FILE *dictFile = fopen(file.c_str(), "r");
   
   if ((cpid = fork()) == 0) { // child process 
 
@@ -139,6 +140,7 @@ void Dictionary::load(const string &file) {
     //}
 	//printf("begin DictLoad...\n");
 	fgetc(dictFile);
+	
 	DictLoad(root, dictFile);
 	//printf("DictLoad OK\n");
 
@@ -165,7 +167,7 @@ void Dictionary::dump(const string &file) {
   int pfd[2];
   assert(pipe(pfd) != -1);
   FILE *dump = fdopen(pfd[FD_WRITE], "w");
-  //FILE *testout = fdopen(1, "w");
+  //FILE *dump = fopen(file.c_str(), "w");
 	
 
   if ((cpid = fork()) == 0) { /* child process */
@@ -352,6 +354,5 @@ bool Dictionary::DictFind(struct Dict *root, const char *target){
 		}
 	}
   }
-
 }
 
