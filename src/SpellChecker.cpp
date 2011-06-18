@@ -50,6 +50,7 @@ void SpellChecker::Suggest(const char *articleName, const char *dictName, const 
 
   load(string(dictName));
 
+  bool printed;
   FILE *article = fopen(articleName, "r");
   unordered_set<string> appeared;
 
@@ -60,7 +61,7 @@ void SpellChecker::Suggest(const char *articleName, const char *dictName, const 
   while (yylex() != 0) {
     string word(dicttext);
 
-    if (check(word)) continue;
+    if (!word.size() || check(word)) continue;
 
     if (appeared.find(word) == appeared.end()) {
 
@@ -71,9 +72,13 @@ void SpellChecker::Suggest(const char *articleName, const char *dictName, const 
       //candidates.resize(querySize);
       sort(candidates.begin(), candidates.end());
 
+      printed = false;
       fprintf(stdout, "%s:", spelltext);
-      foreach(string pw, candidates)
+      foreach(string pw, candidates) {
         fprintf(stdout, " %s", pw.c_str());
+        printed = true;
+      }
+      if (!printed) fputc(' ', stdout);
       fputc('\n', stdout);
     }
     /*

@@ -15,7 +15,7 @@ CFLAGS=-O3
 
 LEX=flex
 CXX=g++
-RM=rm
+RM=rm -f
 
 
 
@@ -24,7 +24,6 @@ all: $(TARGET) $(OBJ)
 
 $(TARGET): $(MAIN) $(OBJ) $(addprefix $(SRC_PATH)/, $(SRC))
 	$(CXX) $(CFLAGS) $(MAIN) $(OBJ) $(LDFLAGS) -o $(TARGET)
-	@$(RM) $(OBJ)
 
 
 scanner.o: $(SRC_PATH)/scanner.l

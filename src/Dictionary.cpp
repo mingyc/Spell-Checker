@@ -86,11 +86,12 @@ void Dictionary::read(const string &file) {
   // redirect yyin and close yyout
   yyin = corpus;
   //fclose(yyout);
+
   
   // add words from yylex to dictionary
   while(yylex() != 0){
     //if(preDictAdd(&preroot, dicttext) == true)
-	preDictAdd(&preroot, dicttext);
+	  preDictAdd(&preroot, dicttext);
     length++;
   }
 
@@ -127,11 +128,13 @@ void Dictionary::load(const string &file) {
 // Dump internal data structure into this file in binary format
 //
 void Dictionary::dump(const string &file) {
-  //FILE *dump = fopen(file.c_str(), "w+");
+  FILE *dump = fopen(file.c_str(), "w+");
   
+  /*
   int pfd[2];
   assert(pipe(pfd) != -1);
   FILE *dump = fdopen(pfd[FD_WRITE], "w+");
+  */
 
   root = new struct Dict[length];
   fprintf(dump, "%d\n", length);
@@ -149,19 +152,16 @@ void Dictionary::preDictAdd(struct preDict **preroot, char *word){
     (*preroot)->word = new char[strlen(word) + 1];
     (*preroot)->leftPtr = (*preroot)->rightPtr = NULL;
     strcpy((*preroot)->word, word);
-	free(word);
     //(*preroot)->count = 1;
     //return 1;
   }else{
     if(strcmp((*preroot)->word, word) > 0){
       //return preDictAdd(&((*preroot)->leftPtr), word);
 	  preDictAdd(&((*preroot)->leftPtr), word);
-	  free(word);
     //}else if(strcmp((*preroot)->word, word) < 0){
 	}else{
       //return preDictAdd(&((*preroot)->rightPtr), word);
 	  preDictAdd(&((*preroot)->rightPtr), word);
-	  free(word);
     }/*else{
       (*preroot)->count += 1;
 	  free(word);

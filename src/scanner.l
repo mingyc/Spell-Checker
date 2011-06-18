@@ -13,7 +13,9 @@ delim   [ \t\n\r]
 ws      {delim}+
 letter  [A-Za-z]
 punct   [:punct:]
-str 	{letter}[[:alnum:][:punct:]]*
+
+str     [A-Za-z']+(?:[^A-Za-z'])
+/* str 	{letter}[[:alnum:][:punct:]]* */
 /*str     (({letter}+([-'_]|{letter}*){letter}+)|{letter})*/
 
 %%
@@ -29,8 +31,9 @@ void installSTR(){
   /* TODO:
      This might cause huge memory leakage. 
      Don't know why realloc cannot work properly  */
-    dicttext  = (char *)malloc((yyleng+1) * sizeof(char));
-    spelltext = (char *)malloc((yyleng+1) * sizeof(char));
+    dicttext  = (char *)realloc(dicttext, (yyleng+1) * sizeof(char));
+    spelltext = (char *)realloc(spelltext, (yyleng+1) * sizeof(char));
+
 
 	for(i = j = k = 0; i < yyleng; i++){
 		if (yytext[i] == '\'') break;
@@ -50,5 +53,7 @@ void installSTR(){
 //   Return 1 then flex will stop parsing.
 //
 int yywrap(){
+  if (dicttext)  free(dicttext);
+  if (spelltext) free(spelltext);
 	return 1;
 }
