@@ -112,22 +112,33 @@ void Dictionary::load(const string &file) {
 
   int i;
   char buf[256];
+  pid_t cpid = 0;
   int pfd[2];
   assert(pipe(pfd) != -1);
-
-  // Communicate with the compressor by pipe
-  Compressor::Decompress(file.c_str(), pfd[FD_WRITE]);
   FILE *dictFile = fdopen(pfd[FD_READ], "r");
+  
+  if ((cpid = fork()) == 0) { /* child process */
 
-  fscanf(dictFile, "%d", &length);
-  root = new struct Dict[length];
-  for(i = 0; i < length; i++){
-    //fscanf(dictFile, "%s %d", buf, &((root+i)->count));
-	fscanf(dictFile, "%s", buf);
-    (root+i)->word = new char[strlen(buf) + 1];
-    strcpy((root+i)->word, buf);
+    // Communicate with the compressor by pipe
+    Compressor::Decompress(file.c_str(), pfd[FD_WRITE]);
+    _exit(EXIT_SUCCESS);
   }
-  fclose(dictFile);
+  else if (cpid > 0) { /* main process */
+
+    fscanf(dictFile, "%d", &length);
+    root = new struct Dict[length];
+    for(i = 0; i < length; i++){
+      //fscanf(dictFile, "%s %d", buf, &((root+i)->count));
+      fscanf(dictFile, "%s", buf);
+      (root+i)->word = new char[strlen(buf) + 1];
+      strcpy((root+i)->word, buf);
+    }
+    fclose(dictFile);
+    wait(NULL);
+  }
+  else {
+    /* error */
+  }
 }
 
 
@@ -148,16 +159,20 @@ void Dictionary::dump(const string &file) {
 
   if ((cpid = fork()) == 0) { /* child process */
     // Communicate with the bzip2 compressor by pipe
+    close(pfd[FD_WRITE]);
     Compressor::Compress(pfd[FD_READ], file.c_str());
     _exit(EXIT_SUCCESS);
   }
   else if (cpid > 0) { /* parent process */
+    close(pfd[FD_READ]);
     root = new struct Dict[length];
     fprintf(dump, "%d\n", length);
     preDictDump(preroot, dump);
+    fclose(dump);
+    wait(NULL);
+
     preDictDestroy(preroot);
     preroot = NULL;
-    fclose(dump);
   }
   else { /* error */
   }
