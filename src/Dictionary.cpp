@@ -10,13 +10,6 @@
 #define  FD_READ  0
 #define  FD_WRITE 1
 
-extern int yylex();
-extern FILE *yyin;
-extern FILE *yyout;
-extern char *yytext;
-extern char *dicttext;
-
-
 //
 // public Dictionary(const string &srcTxtFile, const string &destBinFile)
 // @srcTxtFile:
@@ -27,26 +20,27 @@ extern char *dicttext;
 // data structure into destBinFile
 //
 Dictionary::Dictionary(const string &srcTxtFileName, const string &destBinFileName) {
-  //preroot = NULL;
   root = (struct Dict *)calloc(1, sizeof(struct Dict));
-  //length = 0;
   read(srcTxtFileName);
   dump(destBinFileName);
-  //printf("construct OK\n");
 }
 
 //
 // public Dictionary(const string &srcBinFileName)
 // @srcBinFile:
-//
+//    The name of a dictionary file worked as the source of this dictionary
 // The constructor will load a binary file which is of the same formatted as internal data structure
 //
 Dictionary::Dictionary(const string &srcBinFileName) {
   root = (struct Dict *)calloc(1, sizeof(struct Dict));
-  //length = 0;
   load(srcBinFileName);
 }
 
+//
+// public ~Dictionary()
+//
+// The deconstructor will release all memory used by this object
+//
 Dictionary::~Dictionary() {
   DictDestroy(root);
 }
@@ -58,11 +52,11 @@ Dictionary::~Dictionary() {
 // Return true if found in internal structure
 //
 bool Dictionary::exist(const string &word) {
-  //return (bool)DictFind(root, word.c_str());
   return DictFind(root, word.c_str());
 }
 
 
+// Attention: This function doesn't work now
 //
 // public int getCount(const string &word)
 // @word:
@@ -70,11 +64,6 @@ bool Dictionary::exist(const string &word) {
 // Return the number of apperances of this word
 //
 int Dictionary::getCount(const string &word){
-  /*struct Dict *tmpDict = DictFind(root, word.c_str());
-  if(tmpDict == NULL)
-    return -1;
-  else
-    return tmpDict->count;*/
   return -1;
 }
 
@@ -87,306 +76,231 @@ int Dictionary::getCount(const string &word){
 void Dictionary::read(const string &file) {
   FILE *corpus = fopen(file.c_str(), "r");
 
-  // redirect yyin and close yyout
+  // redirect yyin
   yyin = corpus;
-  //fclose(yyout);
-
   
-  // add words from yylex to dictionary
+  // add words read from yylex to dictionary
   while(yylex() != 0){
-    //if(preDictAdd(&preroot, dicttext) == true)
-	//printf("insert word: %s\n", dicttext);
     DictAdd(root, dicttext);
-    //length++;
   }
 
-
   fclose(corpus);
-  //printf("read OK\n");
 }
 
 
 //
 // private void load(const string &file)
 // @file:
-//    
+//     The file name of the dictionary file which we want to read dictionary
 // Load the binary file into internal memory format
 //
 void Dictionary::load(const string &file) {
-  //FILE *dictFile = fopen(file.c_str(), "r");
 
-  int i;
-  char buf[256];
+  // create pipe that used to connected parent process and child process
   pid_t cpid = 0;
   int pfd[2];
   assert(pipe(pfd) != -1);
-  FILE *dictFile = fdopen(pfd[FD_READ], "r");
-  //FILE *dictFile = fopen(file.c_str(), "r");
-  
-  if ((cpid = fork()) == 0) { // child process 
 
+  // that is the file pointer to the Dictionary file
+  FILE *dictFile = fdopen(pfd[FD_READ], "r");
+  
+  if ((cpid = fork()) == 0) { /* child process */
+    close(pfd[FD_READ]);
+  
     // Communicate with the compressor by pipe
     Compressor::Decompress(file.c_str(), pfd[FD_WRITE]);
     _exit(EXIT_SUCCESS);
-  }
-  else if (cpid > 0) { // main process
 
-    //fscanf(dictFile, "%d", &length);
-    //root = new struct Dict[length];
-    //for(i = 0; i < length; i++){
-    //  fscanf(dictFile, "%s %d", buf, &((root+i)->count));
-    //  fscanf(dictFile, "%s", buf);
-    //  (root+i)->word = new char[strlen(buf) + 1];
-    //  strcpy((root+i)->word, buf);
-    //}
-	//printf("begin DictLoad...\n");
-	
+  }else if (cpid > 0) { /* main process */
+    close(pfd[FD_WRITE]);
+  
+    // read dictionary file to reconstruct the dictionary
     fgetc(dictFile);
-	DictLoad(root, dictFile);
-	//printf("%d\n", fgetc(dictFile));
+    DictLoad(root, dictFile);
 
     fclose(dictFile);
     wait(NULL);
-  }
-  else {
-    // error 
-  }
-  //printf("load OK\n");
 
-
-  //int i, j;
- /* int j;
-  struct Dict *tmp;
-  for(i = 0; i < DICT_WIDTH; i++){
-	tmp = root->next[i];
-  	if(tmp != NULL){
-		if(tmp->exist){
-			printf("%c 1\n", i+'a');
-		}else{
-			printf("%c 0\n", i+'a');
-		}
-
-		for(j = 0; j < DICT_WIDTH; j++){
-			if(tmp->next[j] != NULL && tmp->next[j]->exist)
-				printf("1 ");
-			else
-				printf("0 ");
-		}
-		printf("\n");
-
-	}else{
-		printf("%c X\n\n", i+'a');
-	}
-  }
-  printf("\n");*/
-
+  }else{ /* error */ }
 }
 
-
 //
-// private void write(const string &file)
+// private void dump(const string &file)
 // @file:
-//     
+//     The file name of the dictionary file which we want to dump dictionary
 // Dump internal data structure into this file in binary format
 //
 void Dictionary::dump(const string &file) {
-  //FILE *dump = fopen(file.c_str(), "w+");
   
+  // create pipe that used to connected parent process and child process
   pid_t cpid = 0;
   int pfd[2];
   assert(pipe(pfd) != -1);
-  FILE *dump = fdopen(pfd[FD_WRITE], "w");
-  //FILE *dump = fopen(file.c_str(), "w");
-	
+ 
+  // that is the file pointer to the Dictionary file
+  FILE *dump = fdopen(pfd[FD_WRITE], "w");  
 
   if ((cpid = fork()) == 0) { /* child process */
-    // Communicate with the bzip2 compressor by pipe
     close(pfd[FD_WRITE]);
+
+    // Communicate with the bzip2 compressor by pipe   
     Compressor::Compress(pfd[FD_READ], file.c_str());
     _exit(EXIT_SUCCESS);
-  }
-  else if (cpid > 0) { /* parent process */
+
+  }else if (cpid > 0) { /* parent process */
     close(pfd[FD_READ]);
-    //root = new struct Dict[length];
-    //fprintf(dump, "%d\n", length);
-    //preDictDump(preroot, dump);
+
+    // dump the dictionary to a dictionary file
     DictDump(root, dump);
+
 	fclose(dump);
     wait(NULL);
 
-    //preDictDestroy(preroot);
-    //preroot = NULL;
-  }
-  else { /* error */
-  }
-	//printf("DictDump OK\n");
+  }else { /* error */ }
 }
 
-//bool Dictionary::preDictAdd(struct preDict **preroot, char *word){
-/*void Dictionary::preDictAdd(struct preDict **preroot, char *word){
-  // store pre dictionary by binary tree
-  if(*preroot == NULL){
-    *preroot = new struct preDict[1];
-    (*preroot)->word = new char[strlen(word) + 1];
-    (*preroot)->leftPtr = (*preroot)->rightPtr = NULL;
-    strcpy((*preroot)->word, word);
-    //(*preroot)->count = 1;
-    //return 1;
-  }else{
-    if(strcmp((*preroot)->word, word) > 0){
-      //return preDictAdd(&((*preroot)->leftPtr), word);
-	  preDictAdd(&((*preroot)->leftPtr), word);
-    //}else if(strcmp((*preroot)->word, word) < 0){
-	}else{
-      //return preDictAdd(&((*preroot)->rightPtr), word);
-	  preDictAdd(&((*preroot)->rightPtr), word);
-    }
-  }
-}*/
-
-/*void Dictionary::preDictDump(struct preDict *preroot, FILE *dump){
-  // inorder traversal to dump sorted words
-  static int count = 0;
-  if(preroot != NULL){
-    preDictDump(preroot->leftPtr, dump);
-    //fprintf(dump, "%s %d\n", preroot->word, preroot->count);
-	fprintf(dump, "%s\n", preroot->word);
-    //(root + count)->count = preroot->count;
-    (root + count)->word = new char [strlen(preroot->word) + 1];
-    strcpy((root + count)->word, preroot->word);
-    preDictDump(preroot->rightPtr, dump);
-  }
-}*/
-
-/*void Dictionary::preDictDestroy(struct preDict *preroot){
-  if(preroot != NULL){
-    preDictDestroy(preroot->leftPtr);
-    preDictDestroy(preroot->rightPtr);
-    delete[] preroot->word;
-    delete[] preroot;
-  }
-}*/
-
+//
+// private void DictLoad(struct Dict *root, FILE *dictFile)
+// @root:
+//     Pointer of the dictionary which we want to load
+// @dictFile:
+//     The file pointer of the dictionary file which we want to load
+// Load the binary file into internal memory format
+//
 void Dictionary::DictLoad(struct Dict *root, FILE *dictFile){
 
-	int c, index = 0;
-	int exist = 0;
+  int c, index = 0;
+  bool exist;
 
-	//printf("in DictLoad\n");
-	while((c=fgetc(dictFile))!=')'){
-		if(c == '('){
-			DictLoad(root->next[index], dictFile);
-		}else{
-			
-			if(isupper(c)){
-				exist = 1;
-				c = tolower(c);
-			}else{
-				exist = 0;
-			}
+  while((c=fgetc(dictFile))!=')'){ /* if we didn't reach the end of this scope */
+    if(c == '('){ /* meet the start of next scope */
+      DictLoad(root->next[index], dictFile);
+    }else{
+      
+      if(isupper(c)){ /* uppercase means there is a word ends in this node */
+        exist = true;
+        c = tolower(c);
+      }else{
+        exist = false;
+      }
 
-			index = c - 'a';
-			root->next[index] = (struct Dict *)calloc(1, sizeof(struct Dict));
-			
-			if(exist){
-				root->next[index]->exist = 1;
-			}else{
-				root->next[index]->exist = 0;
-			}
-		}
-	}
+      // construct a new node
+      index = c - 'a';
+      root->next[index] = (struct Dict *)calloc(1, sizeof(struct Dict));
+      if(exist){
+        root->next[index]->exist = true;
+      }
+
+    }
+  }
 }
 
+//
+// private void DictLAdd(struct Dict *root, char *word)
+// @root:
+//     Pointer of the dictionary which we want to insert word
+// @word:
+//     The word which we want to insert in this dictionary
+// Insert word to the dictionary
+//
 void Dictionary::DictAdd(struct Dict *root, char *word){
-	int i;
-	struct Dict* currentPtr = root;
+  int i;
+  struct Dict* currentPtr = root;
 
-	for(i = 0; ; i++){
-		if(word[i] == '\0'){
-			currentPtr->exist = 1;
-			break;
-		}else{
-			//printf("word[i] - 'a' = %d\n", word[i] - 'a');
-			if(currentPtr->next[word[i]-'a'] == NULL){
-				currentPtr->next[word[i]-'a'] = (struct Dict *)calloc(1, sizeof(struct Dict));
-				currentPtr->next[word[i]-'a']->exist = 0;
-			}
-			currentPtr = currentPtr->next[word[i]-'a'];
-		}
-	}
+  for(i = 0; ; i++){
+    if(word[i] == '\0'){ /* reach the word's end, add it in this node */
+      currentPtr->exist = true;
+      break;
+    }else{
+      if(currentPtr->next[word[i]-'a'] == NULL){ /* didn't have path to go to the final node of this word */
+        currentPtr->next[word[i]-'a'] = (struct Dict *)calloc(1, sizeof(struct Dict));
+      }
+
+      // go to the next level
+      currentPtr = currentPtr->next[word[i]-'a'];
+    }
+  }
 }
 
+//
+// private void DictDump(struct Dict *root, FILE *dump)
+// @root:
+//     Pointer of the dictionary which we want to dump
+// @dump:
+//     The file pointer of the dictionary file which we want to dump
+// Dump internal data structure into this file in binary format
+//
 void Dictionary::DictDump(struct Dict *root, FILE *dump){
-	int i;
-	bool leaf = true;
+  int i;
+  bool leaf = true;
 
-	//printf("#%p\t", root);
-	//printf("#value %d\n", root->exist);
-	for(i = 0; i < DICT_WIDTH; i++){
-		//printf("for loop\n");
-		if(root->next[i] != NULL){
-			if(leaf == true){
-				leaf = false;
-				fputc('(', dump);
-				//fprintf(dump, "(");
-			}
-			if(root->next[i]->exist){
-				fputc(toupper(i+'a'), dump);
-				//fprintf(dump, "%c", toupper(i+'a'));
-			}else{
-				fputc(i+'a', dump);
-				//fprintf(dump, "%c", i+'a');
-			}
-			DictDump(root->next[i], dump); 
-		}
-	}
-	if(leaf == false){
-		//fprintf(dump, ")");
-		fputc(')', dump);
-	}
+  for(i = 0; i < DICT_WIDTH; i++){
+    if(root->next[i] != NULL){ /* this node is not a leaf anymore */
+      if(leaf == true){
+        leaf = false;
+        fputc('(', dump);
+      }
+
+      if(root->next[i]->exist){ /* if there is a word ends at this node, the print the uppercase */
+        fputc(toupper(i+'a'), dump);
+      }else{
+        fputc(i+'a', dump);
+      }
+
+      // go to the next level recursively
+      DictDump(root->next[i], dump); 
+    }
+  }
+  if(leaf == false){
+    fputc(')', dump);
+  }
 }
 
+//
+// public bool DictDestroy(struct Dict *root)
+// @root:
+//     Pointer to the dictionary which we want to destroy
+// Release all memory used by the Dictionary root
+//
 void Dictionary::DictDestroy(struct Dict *root){
 
-	int i;
-	if(root != NULL){
-		for(i = 0; i < DICT_WIDTH; i++){
-			DictDestroy(root->next[i]);
-		}
-	}
-	free(root);
+  int i;
+  if(root != NULL){
+    for(i = 0; i < DICT_WIDTH; i++){
+      // destroy all node recusively
+      DictDestroy(root->next[i]);
+    }
+  }
+  free(root);
 }
 
-
+//
+// public bool DictFind(struct Dict *root, const char *target)
+// @root:
+//     Pointer of the dictionary which we want to query
+// @target:
+//     The target to be checked if it is in this dictionary or not
+// 
+// Return true if found in internal structure
+//
 bool Dictionary::DictFind(struct Dict *root, const char *target){
-  /*int left = 0, right = length - 1, mid;
-  while(left <= right){
-    mid = (left + right) / 2;
-    if(strcmp((root+mid)->word, target) > 0)
-      right = mid - 1;
-    else if(strcmp((root+mid)->word, target) < 0)
-      left = mid + 1;
-    else
-      return (root+mid);
-  }
-  return NULL;*/
   int i;
   struct Dict *currentPtr = root;
 
   for(i = 0; ; i++){
-  	if(target[i] == '\0'){
-		if(currentPtr->exist){
-			return true;
-		}else{
-			return false;
-		}
-	}else{
-		if(currentPtr->next[target[i]-'a'] == NULL){
-			return false;
-		}else{
-			currentPtr = currentPtr->next[target[i]-'a'];
-		}
-	}
+    if(target[i] == '\0'){ /* reach the target's end */
+      if(currentPtr->exist){
+        return true;
+      }else{
+        return false;
+      }
+    }else{
+      if(currentPtr->next[target[i]-'a'] == NULL){ /* don't have a node to this target */
+        return false;
+      }else{
+        currentPtr = currentPtr->next[target[i]-'a'];
+      }
+    }
   }
 }
 

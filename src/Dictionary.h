@@ -7,17 +7,14 @@
 
 using std::string;
 
-// pre Dictionary
-/*struct preDict{
-  char *word;
-  int count;
-  struct preDict *leftPtr;
-  struct preDict *rightPtr;
-};*/
+// extern from tab.yy.c
+extern int yylex();
+extern FILE *yyin;
+extern char *dicttext;
 
 // Dictionary
 struct Dict{
-  int exist;
+  bool exist;
   struct Dict *next[DICT_WIDTH];
 };
 
@@ -86,21 +83,59 @@ class Dictionary {
     //
     void dump(const string &file);
 
-    //bool preDictAdd(struct preDict **root, char *word);
-	//void preDictAdd(struct preDict **root, char *word);
-    //void preDictDump(struct preDict *root, FILE *dump);
-    //void preDictDestroy(struct preDict *preroot);
+    //
+    // private void DictLoad(struct Dict *root, FILE *dictFile)
+    // @root:
+    //     Pointer of the dictionary which we want to load
+    // @dictFile:
+    //     The file pointer of the dictionary file which we want to load
+    // Load the binary file into internal memory format
+    //
     void DictLoad(struct Dict *root, FILE *dictFile);
-	void DictAdd(struct Dict *root, char *word);
-	bool DictFind(struct Dict *root, const char *target);
-	void DictDestroy(struct Dict *root);
-	void DictDump(struct Dict *root, FILE *dump);
+
+    //
+    // private void DictLAdd(struct Dict *root, char *word)
+    // @root:
+    //     Pointer of the dictionary which we want to insert word
+    // @word:
+    //     The word which we want to insert in this dictionary
+    // Insert word to the dictionary
+    //
+    void DictAdd(struct Dict *root, char *word);
+
+    //
+    // public bool DictFind(struct Dict *root, const char *target)
+    // @root:
+    //     Pointer of the dictionary which we want to query
+    // @target:
+    //     The target to be checked if it is in this dictionary or not
+    // 
+    // Return true if found in internal structure
+    //
+    bool DictFind(struct Dict *root, const char *target);
+
+    //
+    // public bool DictDestroy(struct Dict *root)
+    // @root:
+    //     Pointer to the dictionary which we want to destroy
+    // Release all memory used by the Dictionary root
+    //	
+    void DictDestroy(struct Dict *root);
+
+    //
+    // private void DictDump(struct Dict *root, FILE *dump)
+    // @root:
+    //     Pointer of the dictionary which we want to dump
+    // @dump:
+    //     The file pointer of the dictionary file which we want to dump
+    // Dump internal data structure into this file in binary format
+    //
+    void DictDump(struct Dict *root, FILE *dump);
 
   private:
 
-    //struct preDict *preroot;
+    // root pointer to the dictionary
     struct Dict *root;
-    //int length;
 };
 
 
