@@ -75,13 +75,11 @@ int Dictionary::getCount(const string &word){
 //
 void Dictionary::read(const string &file) {
   FILE *corpus = fopen(file.c_str(), "r");
+  char buf[32];
 
-  // redirect yyin
-  yyin = corpus;
-  
   // add words read from yylex to dictionary
-  while(yylex() != 0){
-    DictAdd(root, dicttext);
+  while(fscanf(corpus, "%s", buf) == 1){
+    DictAdd(root, buf);
   }
 
   fclose(corpus);
