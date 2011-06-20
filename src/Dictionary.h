@@ -7,11 +7,6 @@
 
 using std::string;
 
-// extern from tab.yy.c
-extern int yylex();
-extern FILE *yyin;
-extern char *dicttext;
-
 // Dictionary
 struct Dict{
   bool exist;
