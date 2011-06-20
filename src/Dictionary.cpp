@@ -109,6 +109,7 @@ void Dictionary::load(const string &file) {
   
     // Communicate with the compressor by pipe
     Compressor::Decompress(file.c_str(), pfd[FD_WRITE]);
+    //Compressor::ParallelDecompress(file.c_str(), pfd[FD_WRITE]);
     _exit(EXIT_SUCCESS);
 
   }else if (cpid > 0) { /* main process */

@@ -6,6 +6,8 @@ class Compressor {
   public:
     static void Compress(int srcFd, const char *destFile);
     static void Decompress(const char *srcFile, int destFd);
+    static void ParallelCompress(const char *srcFileName, const char *destFileName) ;
+    static void ParallelDecompress(const char *srcFileName, int destFd) ;
   protected:
     Compressor();
     ~Compressor();

@@ -46,7 +46,7 @@ void SpellChecker::Create(const char *textName, const char *dictName) {
 //
 // Return a list of suggestion words with higher correctness
 //
-void SpellChecker::Suggest(const char *articleName, const char *dictName, const int &querySize) {
+void SpellChecker::Suggest(const char *articleName, const char *dictName) {
 
   load(string(dictName));
 
@@ -68,7 +68,7 @@ void SpellChecker::Suggest(const char *articleName, const char *dictName, const 
       appeared.insert(word);
 
 
-      vector<string> candidates = basic_suggest(word, querySize);
+      vector<string> candidates = basic_suggest(word);
       //candidates.resize(querySize);
       sort(candidates.begin(), candidates.end());
 
@@ -124,7 +124,7 @@ bool SpellChecker::check(const string &word) {
 //
 // Return a list of suggested words from the dictionary
 //
-vector<string> SpellChecker::basic_suggest(const string &word, const int &querySize) {
+vector<string> SpellChecker::basic_suggest(const string &word) {
 
   vector<string> candidateSet;
 

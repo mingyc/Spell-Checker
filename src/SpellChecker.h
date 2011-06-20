@@ -23,14 +23,14 @@ class SpellChecker {
     }
 
     void Create(const char *textName, const char *dictName);
-    void Suggest(const char *articleName, const char *dictName, const int &querySize = 3);
+    void Suggest(const char *articleName, const char *dictName);
     
 
   private:
     void build(const string &textFile, const string &dictionaryFile);
     void load(const string &idictionaryFile);
     bool check(const string &word);
-    vector<string> basic_suggest(const string &word, const int &querySize);
+    vector<string> basic_suggest(const string &word);
 
 
     vector<string> getWordsWithEditDistance1(const string &word);
