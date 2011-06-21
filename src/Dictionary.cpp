@@ -176,11 +176,9 @@ void Dictionary::DictLoad(struct Dict *root, FILE *dictFile){
       DictLoad(root->next[index], dictFile);
     }else{
       
-      if(isupper(c)){ /* uppercase means there is a word ends in this node */
-        exist = true;
-        c = tolower(c);
-      }else{
-        exist = false;
+	  if(c == '!'){ /* uppercase means there is a word ends in this node */
+        root->next[index]->exist = true;
+		continue;
       }
 
       // construct a new node
@@ -239,11 +237,11 @@ void Dictionary::DictDump(struct Dict *root, FILE *dump){
         leaf = false;
         fputc('(', dump);
       }
+      
+	  fputc(i+'a', dump);
 
       if(root->next[i]->exist){ /* if there is a word ends at this node, the print the uppercase */
-        fputc(toupper(i+'a'), dump);
-      }else{
-        fputc(i+'a', dump);
+        fputc('!', dump);
       }
 
       // go to the next level recursively
