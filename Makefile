@@ -12,7 +12,7 @@ OBJ=scanner.o $(SRC:.cpp=.o)
 
 #LDFLAGS=-O3 -Wl,--enable-auto-import
 LDFLAGS=-Isrc -Llib -lbz2
-CFLAGS=-O3
+CFLAGS=-O3 -static -march=corei7
 
 LEX=flex
 CXX=g++
