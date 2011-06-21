@@ -12,7 +12,7 @@ class Compressor {
     Compressor();
     ~Compressor();
   private:
-    const static int blockSize100k = 1;
+    const static int blockSize100k = 9;
     const static int verbosity = 0;
     const static int workFactor = 30;
 };

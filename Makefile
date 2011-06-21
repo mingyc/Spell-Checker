@@ -44,7 +44,7 @@ $(BZIP): $(SRC_PATH)/pbzip2.cpp $(SRC_PATH)/BZ2StreamScanner.cpp
 scanner.o: $(SRC_PATH)/scanner.l
 	$(LEX) -oscanner.cpp $<
 	$(CXX) -c scanner.cpp
-	@$(RM) scanner.cpp
+	$(RM) scanner.cpp
 
 
 SpellChecker.o: $(SRC_PATH)/SpellChecker.cpp $(SRC_PATH)/SpellChecker.h 

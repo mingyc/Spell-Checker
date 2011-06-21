@@ -4,9 +4,15 @@
 	#include<ctype.h>
 	#include<string.h>
 	#define STR 1
+
+
 	void installSTR();
 	char *dicttext = NULL;
 	char *spelltext = NULL;
+  int spelltextleng = 0;
+
+
+
 %}
 
 delim   [ \t\n\r]
@@ -25,6 +31,9 @@ str     [A-Za-z']+(?:[^A-Za-z'])
 . {}
 
 %%
+
+
+
 
 void installSTR(){
 	int i, j, k;
@@ -45,6 +54,7 @@ void installSTR(){
 	
 	*(dicttext + j) = '\0';
 	*(spelltext + k) = '\0';
+  spelltextleng = k;
 }
 
 //

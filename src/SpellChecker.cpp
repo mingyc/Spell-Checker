@@ -12,7 +12,7 @@ using boost::unordered_set;
 
 extern int yylex();
 extern FILE *yyin;
-extern FILE *yyout;
+extern int spelltextleng;
 extern char *spelltext;
 extern char *dicttext;
 
@@ -47,6 +47,11 @@ void SpellChecker::Create(const char *textName, const char *dictName) {
 // Return a list of suggestion words with higher correctness
 //
 void SpellChecker::Suggest(const char *articleName, const char *dictName) {
+  
+  const int OUTPUT_BUF_SIZE = 1048576; // 1 MB dynamic memory
+  //char *outbuf = (char *)malloc(sizeof(char) * OUTPUT_BUF_SIZE);
+  char outbuf[OUTPUT_BUF_SIZE] = {'\0'};
+  int outbuf_i = 0;
 
   load(string(dictName));
 
@@ -56,7 +61,6 @@ void SpellChecker::Suggest(const char *articleName, const char *dictName) {
 
   // Redirect yyin and close yyout
   yyin = article;
-  //fclose(yyout);
 
   while (yylex() != 0) {
     string word(dicttext);
@@ -73,13 +77,28 @@ void SpellChecker::Suggest(const char *articleName, const char *dictName) {
       sort(candidates.begin(), candidates.end());
 
       printed = false;
-      fprintf(stdout, "%s:", spelltext);
+
+      //fprintf(stdout, "%s:", spelltext);
+      memcpy(outbuf+outbuf_i, spelltext, spelltextleng);
+      outbuf_i += spelltextleng;
+      outbuf[outbuf_i++] = ':';
+
       foreach(string pw, candidates) {
-        fprintf(stdout, " %s", pw.c_str());
+
+        //fprintf(stdout, " %s", pw.c_str());
+        int len = pw.size();
+        outbuf[outbuf_i++] = ' ';
+        memcpy(outbuf+outbuf_i, pw.c_str(), len);
+        outbuf_i += len;
+
         printed = true;
       }
-      if (!printed) fputc(' ', stdout);
-      fputc('\n', stdout);
+      if (!printed) {
+        //fputc(' ', stdout);
+        outbuf[outbuf_i++] = ' ';
+      }
+      //fputc('\n', stdout);
+      outbuf[outbuf_i++] = '\n';
     }
     /*
     else {
@@ -87,6 +106,8 @@ void SpellChecker::Suggest(const char *articleName, const char *dictName) {
     }
     */
   }
+  for (int nWritten = 0; (nWritten += write(STDOUT_FILENO, outbuf+nWritten, outbuf_i-nWritten)) < outbuf_i;);
+
 }
 
 
