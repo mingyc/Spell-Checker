@@ -63,16 +63,18 @@ void SpellChecker::Suggest(const char *articleName, const char *dictName) {
   yyin = article;
 
   while (yylex() != 0) {
-    string word(dicttext);
+    int wordlen = spelltextleng;
+    string caselessWord(dicttext);
+    string word(spelltext);
 
-    if (!word.size() || check(word)) continue;
+    if ( !wordlen || check(caselessWord)) continue;
 
-    if (appeared.find(word) == appeared.end()) {
+    if (appeared.find(caselessWord) == appeared.end()) {
 
-      appeared.insert(word);
+      appeared.insert(caselessWord);
 
 
-      vector<string> candidates = basic_suggest(word);
+      vector<string> candidates = basic_suggest(caselessWord);
       //candidates.resize(querySize);
       sort(candidates.begin(), candidates.end());
 
@@ -97,14 +99,15 @@ void SpellChecker::Suggest(const char *articleName, const char *dictName) {
         //fputc(' ', stdout);
         outbuf[outbuf_i++] = ' ';
       }
-      //fputc('\n', stdout);
-      outbuf[outbuf_i++] = '\n';
     }
-    /*
     else {
-      fprintf(stdout, "%s\n", spelltext);
+      //fprintf(stdout, "%s\n", spelltext);
+      memcpy(outbuf+outbuf_i, spelltext, spelltextleng);
+      outbuf_i += spelltextleng;
+      outbuf[outbuf_i++] = ':';
     }
-    */
+    //fputc('\n', stdout);
+    outbuf[outbuf_i++] = '\n';
   }
   for (int nWritten = 0; (nWritten += write(STDOUT_FILENO, outbuf+nWritten, outbuf_i-nWritten)) < outbuf_i;);
 
