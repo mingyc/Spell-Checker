@@ -50,6 +50,9 @@ class SpellChecker {
     static auto_ptr<SpellChecker> _instance;
 
     auto_ptr<Dictionary>          dict;
+
+  public:
+    static const int              OUTPUT_BUF_SIZE = 1048576; // 1MB dynamic memory
 };
 
 
