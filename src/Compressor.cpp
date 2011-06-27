@@ -4,6 +4,9 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <sys/wait.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,8 +26,76 @@ Compressor::~Compressor() {
 }
 
 
-void Compressor::ParallelCompress(const char *srcFileName, const char *destFileName) {
 
+void Compressor::PAQ8FCompress(int srcFd, const char *destFileName) {
+  int pfd[2];
+  pid_t cpid = 0;
+  char buf[BUFSIZE+1];
+  int nRead = 0;
+  int nWritten = 0;
+
+  assert (pipe(pfd) != -1);
+
+  int destFd = open(destFileName, O_CREAT | O_WRONLY | O_TRUNC, 0644);
+  while ((nRead = read(srcFd, buf, BUFSIZE)) > 0)
+    for (nWritten = 0; (nWritten += write(destFd, buf+nWritten, BUFSIZE-nWritten)) < nRead;);
+
+  if ((cpid = fork()) == 0) { /* child process */
+
+    int devnull = open("/dev/null", O_WRONLY);
+    dup2(devnull, STDOUT_FILENO);
+    execl("/nfs/undergrad/97/b97037/Test/paq8f64", "./paq8f64", "-8", destFileName, (char *)NULL);
+    _exit(EXIT_FAILURE);
+  }
+  else if (cpid > 0) { /* main process */
+    wait(NULL);
+    char buf[BUFSIZE] = "./";
+    strcat(buf, destFileName);
+    strcat(buf, ".paq8f");
+    rename(buf, destFileName);
+  }
+  else {
+    /* error */
+  }
+}
+
+
+void Compressor::PAQ8FDecompress(const char *srcFileName, int destFd) {
+
+  int nRead;
+  int nWritten;
+  char buf[BUFSIZE+1];
+  pid_t cpid;
+  char tmpName[BUFSIZE] = "/tmp2/", orgName[BUFSIZE] = "./";
+  strcat(tmpName, srcFileName);
+  strcat(tmpName, ".paq8f");
+  strcat(orgName, srcFileName);
+  rename(orgName, tmpName);
+
+  if ((cpid = fork()) == 0) { /* child process */
+    int devnull = open("/dev/null", O_WRONLY);
+    dup2(devnull, STDOUT_FILENO);
+
+    execl("/nfs/undergrad/97/b97037/Test/paq8f64", "./paq8f64", "-d", tmpName, (char *)NULL);
+    _exit(EXIT_FAILURE);
+  }
+  else if (cpid > 0) { /* main process */
+    wait(NULL);
+    int i;
+    for (i = strlen(tmpName); i >= 0 && tmpName[i] != '.' ; i--); tmpName[i] = 0;
+    int srcFd = open(tmpName, O_RDONLY);
+    while ((nRead = read(srcFd, buf, BUFSIZE)) > 0)
+      for (nWritten = 0; (nWritten += write(destFd, buf+nWritten, BUFSIZE-nWritten)) < nRead;);
+  }
+  else {
+    /* error */
+  }
+}
+
+
+
+
+void Compressor::ParallelCompress(const char *srcFileName, const char *destFileName) {
 
 }
 
