@@ -1,10 +1,22 @@
 #include "SpellChecker.h"
 #include <cstdio>
+#include <cassert>
 #include <map>
 #include <algorithm>
 #include <boost/foreach.hpp>
 #include <boost/unordered_set.hpp>
 #define foreach BOOST_FOREACH
+
+#include <unistd.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/select.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <errno.h>
+#include <fcntl.h>
+#define FD_READ   0
+#define FD_WRITE  1
 using std::pair;
 using std::make_pair;
 using std::map;
@@ -15,6 +27,13 @@ extern FILE *yyin;
 extern int spelltextleng;
 extern char *spelltext;
 extern char *dicttext;
+
+#define yyconst const
+typedef struct yy_buffer_state *YY_BUFFER_STATE;
+typedef size_t yy_size_t;
+extern YY_BUFFER_STATE yy_scan_bytes(yyconst char *bytes, int __yybytes_len);
+extern void yy_switch_to_buffer(YY_BUFFER_STATE new_buffer);
+extern void yy_delete_buffer(YY_BUFFER_STATE b);
 
 auto_ptr<SpellChecker> SpellChecker::_instance;
 
@@ -56,60 +75,143 @@ void SpellChecker::Suggest(const char *articleName, const char *dictName) {
   load(string(dictName));
 
   bool printed;
-  FILE *article = fopen(articleName, "r");
   unordered_set<string> appeared;
 
-  // Redirect yyin and close yyout
-  yyin = article;
 
-  while (yylex() != 0) {
-    int wordlen = spelltextleng;
-    string caselessWord(dicttext);
-    string word(spelltext);
-
-    if ( !wordlen || check(caselessWord)) continue;
-
-    if (appeared.find(caselessWord) == appeared.end()) {
-
-      appeared.insert(caselessWord);
+  const int FILE_SPLIT_NUM = 10; 
+  int articleFd = open(articleName, O_RDONLY);
+  struct stat articleStat;
+  fstat(articleFd, &articleStat);
+  int articleSize = articleStat.st_size;
+  char *article = (char *)mmap(0, articleSize, PROT_READ, MAP_PRIVATE, articleFd, 0);
 
 
-      vector<string> candidates = basic_suggest(caselessWord);
-      //candidates.resize(querySize);
-      sort(candidates.begin(), candidates.end());
+  int startPos[FILE_SPLIT_NUM+1] = {0};
+  const int splitSize = articleSize/FILE_SPLIT_NUM;
+  // split the article into FILE_SPLIT_NUM parts
+  for (int i = 1; i < FILE_SPLIT_NUM; ++i) {
+    startPos[i] = startPos[i-1] + splitSize;
+    while (article[ startPos[i] ] != ' ') startPos[i]++;
+  }
+  startPos[FILE_SPLIT_NUM] = articleSize;
 
-      printed = false;
+  YY_BUFFER_STATE articleBuf[FILE_SPLIT_NUM];
+  for (int i = 0; i < FILE_SPLIT_NUM; ++i)
+    articleBuf[i] = yy_scan_bytes(article + startPos[i], startPos[i+1]-startPos[i]);
 
-      //fprintf(stdout, "%s:", spelltext);
-      memcpy(outbuf+outbuf_i, spelltext, spelltextleng);
-      outbuf_i += spelltextleng;
-      outbuf[outbuf_i++] = ':';
+  pid_t cpid[FILE_SPLIT_NUM];
+  int pfd[FILE_SPLIT_NUM][2];
 
-      foreach(string pw, candidates) {
+  for (int i = 0; i < FILE_SPLIT_NUM; ++i) 
+  {
+    pipe(pfd[i]);
 
-        //fprintf(stdout, " %s", pw.c_str());
-        int len = pw.size();
-        outbuf[outbuf_i++] = ' ';
-        memcpy(outbuf+outbuf_i, pw.c_str(), len);
-        outbuf_i += len;
+    if ((cpid[i] = fork()) == 0) { /* i-th child process */
+      yy_switch_to_buffer(articleBuf[i]);
 
-        printed = true;
+      close(pfd[i][FD_READ]);
+
+      outbuf_i = 0;
+      while (yylex() != 0) 
+      {
+        int wordlen = spelltextleng;
+        string caselessWord(dicttext);
+        string word(spelltext);
+
+        if ( !wordlen || check(caselessWord)) continue;
+
+        if (appeared.find(caselessWord) == appeared.end()) {
+
+          appeared.insert(caselessWord);
+
+
+          vector<string> candidates = basic_suggest(caselessWord);
+          //candidates.resize(querySize);
+          sort(candidates.begin(), candidates.end());
+
+          printed = false;
+
+          //fprintf(stdout, "%s:", spelltext);
+          memcpy(outbuf+outbuf_i, spelltext, spelltextleng);
+          outbuf_i += spelltextleng;
+          outbuf[outbuf_i++] = ':';
+
+          foreach(string pw, candidates) {
+
+            //fprintf(stdout, " %s", pw.c_str());
+            int len = pw.size();
+            outbuf[outbuf_i++] = ' ';
+            memcpy(outbuf+outbuf_i, pw.c_str(), len);
+            outbuf_i += len;
+
+            printed = true;
+          }
+          if (!printed) {
+            //fputc(' ', stdout);
+            outbuf[outbuf_i++] = ' ';
+          }
+        }
+        else {
+          //fprintf(stdout, "%s\n", spelltext);
+          memcpy(outbuf+outbuf_i, spelltext, spelltextleng);
+          outbuf_i += spelltextleng;
+          outbuf[outbuf_i++] = ':';
+        }
+        //fputc('\n', stdout);
+        outbuf[outbuf_i++] = '\n';
       }
-      if (!printed) {
-        //fputc(' ', stdout);
-        outbuf[outbuf_i++] = ' ';
-      }
+      int nWritten;
+      for (nWritten = 0; (nWritten += write(pfd[i][FD_WRITE], outbuf+nWritten, outbuf_i-nWritten)) < outbuf_i;);
+      fprintf(stderr, "#%d write %d bytes\n", i, nWritten);
+      close(pfd[i][FD_WRITE]);
+      _exit(EXIT_SUCCESS);
+    } 
+    else if (cpid[i] > 0) { /* main process */
+
+      close(pfd[i][FD_WRITE]);
+
     }
     else {
-      //fprintf(stdout, "%s\n", spelltext);
-      memcpy(outbuf+outbuf_i, spelltext, spelltextleng);
-      outbuf_i += spelltextleng;
-      outbuf[outbuf_i++] = ':';
+      /* error */
     }
-    //fputc('\n', stdout);
-    outbuf[outbuf_i++] = '\n';
   }
-  for (int nWritten = 0; (nWritten += write(STDOUT_FILENO, outbuf+nWritten, outbuf_i-nWritten)) < outbuf_i;);
+
+  fd_set fdState;
+  struct timeval TLE;
+  FD_ZERO(&fdState);
+
+  int now_i = 0;
+
+  while (now_i < FILE_SPLIT_NUM) 
+  {
+
+    FD_SET(pfd[now_i][FD_READ], &fdState);
+    TLE.tv_sec = 0;
+    TLE.tv_usec = 500;
+
+    int ret = select( pfd[now_i][FD_READ]+1, &fdState, NULL, NULL, &TLE );
+    if (ret > 0) {
+      if (FD_ISSET(pfd[now_i][FD_READ], &fdState)) {
+        int nRead = 0; 
+        while ((nRead = read(pfd[now_i][FD_READ], outbuf, OUTPUT_BUF_SIZE)) > 0) 
+          for (int nWritten = 0; (nWritten += write(STDOUT_FILENO, outbuf+nWritten, nRead-nWritten)) < nRead;);
+        fprintf(stderr, "After writing #%d to STDOUT\n", now_i);
+        now_i++;
+      }
+    }
+    else if (ret == 0) {
+    }
+    else {
+      /* error */
+    }
+  }
+
+
+  //for (int nWritten = 0; (nWritten += write(STDOUT_FILENO, outbuf+nWritten, outbuf_i-nWritten)) < outbuf_i;);
+
+  for (int i = 0; i < FILE_SPLIT_NUM; ++i)
+    yy_delete_buffer(articleBuf[i]);
+  munmap(article, articleSize);
 
 }
 
