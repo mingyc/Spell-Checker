@@ -162,7 +162,6 @@ void SpellChecker::Suggest(const char *articleName, const char *dictName) {
       }
       int nWritten;
       for (nWritten = 0; (nWritten += write(pfd[i][FD_WRITE], outbuf+nWritten, outbuf_i-nWritten)) < outbuf_i;);
-      fprintf(stderr, "#%d write %d bytes\n", i, nWritten);
       close(pfd[i][FD_WRITE]);
       _exit(EXIT_SUCCESS);
     } 
@@ -195,7 +194,6 @@ void SpellChecker::Suggest(const char *articleName, const char *dictName) {
         int nRead = 0; 
         while ((nRead = read(pfd[now_i][FD_READ], outbuf, OUTPUT_BUF_SIZE)) > 0) 
           for (int nWritten = 0; (nWritten += write(STDOUT_FILENO, outbuf+nWritten, nRead-nWritten)) < nRead;);
-        fprintf(stderr, "After writing #%d to STDOUT\n", now_i);
         now_i++;
       }
     }

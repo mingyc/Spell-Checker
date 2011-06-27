@@ -1,5 +1,6 @@
 #include "Dictionary.h"
 #include "Compressor.h"
+#include "predict.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,6 +22,9 @@
 //
 Dictionary::Dictionary(const string &srcTxtFileName, const string &destBinFileName) {
   root = (struct Dict *)calloc(1, sizeof(struct Dict));
+  preroot = (struct Dict *)calloc(1, sizeof(struct Dict));
+  find = (int *)calloc(preSize, sizeof(int));
+  preread(preroot, preDict, preSize);
   read(srcTxtFileName);
   dump(destBinFileName);
 }
@@ -33,6 +37,8 @@ Dictionary::Dictionary(const string &srcTxtFileName, const string &destBinFileNa
 //
 Dictionary::Dictionary(const string &srcBinFileName) {
   root = (struct Dict *)calloc(1, sizeof(struct Dict));
+  preroot = NULL;
+  find = (int *)calloc(preSize, sizeof(int));
   load(srcBinFileName);
 }
 
@@ -42,7 +48,9 @@ Dictionary::Dictionary(const string &srcBinFileName) {
 // The deconstructor will release all memory used by this object
 //
 Dictionary::~Dictionary() {
-  DictDestroy(root);
+  if(preroot) DictDestroy(preroot);
+  if(root) DictDestroy(root);
+  if(find) free(find);
 }
 
 //
@@ -67,6 +75,14 @@ int Dictionary::getCount(const string &word){
   return -1;
 }
 
+void Dictionary::preread(struct Dict *root, const char *dict[], const int size){
+  int i;
+
+  for(i = 0; i < size; i++){
+    DictAdd(root, dict[i]);
+  }
+
+}
 
 //
 // private void read(const string &file)
@@ -76,13 +92,25 @@ int Dictionary::getCount(const string &word){
 void Dictionary::read(const string &file) {
   FILE *corpus = fopen(file.c_str(), "r");
   char buf[32];
+  int i;
+  struct Dict *tmp = (struct Dict *)calloc(1, sizeof(struct Dict));
 
   // add words read from yylex to dictionary
   while(fscanf(corpus, "%s", buf) == 1){
-    DictAdd(root, buf);
+    DictAdd(tmp, buf);
+	if(DictFind(preroot, buf) == false){
+	  DictAdd(root, buf);
+	}
+  }
+
+  for(i = 0; i < preSize; i++){
+    if(DictFind(tmp, preDict[i]) == true){
+	  find[i] = 1;
+	}
   }
 
   fclose(corpus);
+  DictDestroy(tmp);
 }
 
 
@@ -97,6 +125,8 @@ void Dictionary::load(const string &file) {
   // create pipe that used to connected parent process and child process
   pid_t cpid = 0;
   int pfd[2];
+  int i;
+  struct Dict* tmp = (struct Dict*)calloc(1, sizeof(struct Dict));
   assert(pipe(pfd) != -1);
 
   // that is the file pointer to the Dictionary file
@@ -117,10 +147,21 @@ void Dictionary::load(const string &file) {
     fgetc(dictFile);
     DictLoad(root, dictFile);
 
+	fgetc(dictFile);
+	DictLoad(tmp, dictFile);
+	
     fclose(dictFile);
     wait(NULL);
 
   }else{ /* error */ }
+  
+  for(i = 0; i < preSize; i++){
+    if(DictFind(tmp, preDict[i]) == false){
+	  DictAdd(root, preDict[i]);
+	}
+  }
+  
+  DictDestroy(tmp);
 }
 
 //
@@ -134,6 +175,8 @@ void Dictionary::dump(const string &file) {
   // create pipe that used to connected parent process and child process
   pid_t cpid = 0;
   int pfd[2];
+  int i;
+  struct Dict* tmp = (struct Dict*)calloc(1, sizeof(struct Dict));
   assert(pipe(pfd) != -1);
  
   // that is the file pointer to the Dictionary file
@@ -152,10 +195,19 @@ void Dictionary::dump(const string &file) {
     // dump the dictionary to a dictionary file
     DictDump(root, dump);
 
+	for(i = 0; i < preSize; i++){
+	  if(find[i] == 0){
+	    DictAdd(tmp, preDict[i]);
+	  }
+	}
+	DictDump(tmp, dump);
+	
 	fclose(dump);
     wait(NULL);
 
   }else { /* error */ }
+  
+  DictDestroy(tmp);
 }
 
 //
@@ -200,7 +252,7 @@ void Dictionary::DictLoad(struct Dict *root, FILE *dictFile){
 //     The word which we want to insert in this dictionary
 // Insert word to the dictionary
 //
-void Dictionary::DictAdd(struct Dict *root, char *word){
+void Dictionary::DictAdd(struct Dict *root, const char *word){
   int i;
   struct Dict* currentPtr = root;
 
@@ -262,6 +314,7 @@ void Dictionary::DictDump(struct Dict *root, FILE *dump){
 void Dictionary::DictDestroy(struct Dict *root){
 
   int i;
+
   if(root != NULL){
     for(i = 0; i < DICT_WIDTH; i++){
       // destroy all node recusively
@@ -300,4 +353,5 @@ bool Dictionary::DictFind(struct Dict *root, const char *target){
     }
   }
 }
+
 

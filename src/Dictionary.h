@@ -55,6 +55,9 @@ class Dictionary {
 
 
   private:
+  
+    void preread(struct Dict *root, const char *dict[], const int size);
+  
     //
     // private void read(const string &file)
     // @file:
@@ -96,7 +99,7 @@ class Dictionary {
     //     The word which we want to insert in this dictionary
     // Insert word to the dictionary
     //
-    void DictAdd(struct Dict *root, char *word);
+    void DictAdd(struct Dict *root,const char *word);
 
     //
     // public bool DictFind(struct Dict *root, const char *target)
@@ -130,7 +133,9 @@ class Dictionary {
   private:
 
     // root pointer to the dictionary
+	struct Dict *preroot;
     struct Dict *root;
+	int *find;
 };
 
 
