@@ -106,7 +106,8 @@ void Dictionary::load(const string &file) {
     close(pfd[FD_READ]);
   
     // Communicate with the compressor by pipe
-    Compressor::Decompress(file.c_str(), pfd[FD_WRITE]);
+    //Compressor::Decompress(file.c_str(), pfd[FD_WRITE]);
+    Compressor::PAQ8FDecompress(file.c_str(), pfd[FD_WRITE]);
     //Compressor::ParallelDecompress(file.c_str(), pfd[FD_WRITE]);
     _exit(EXIT_SUCCESS);
 
@@ -143,7 +144,8 @@ void Dictionary::dump(const string &file) {
     close(pfd[FD_WRITE]);
 
     // Communicate with the bzip2 compressor by pipe   
-    Compressor::Compress(pfd[FD_READ], file.c_str());
+    //Compressor::Compress(pfd[FD_READ], file.c_str());
+    Compressor::PAQ8FCompress(pfd[FD_READ], file.c_str());
     _exit(EXIT_SUCCESS);
 
   }else if (cpid > 0) { /* parent process */

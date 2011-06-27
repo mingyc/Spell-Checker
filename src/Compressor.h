@@ -8,6 +8,9 @@ class Compressor {
     static void Decompress(const char *srcFile, int destFd);
     static void ParallelCompress(const char *srcFileName, const char *destFileName) ;
     static void ParallelDecompress(const char *srcFileName, int destFd) ;
+
+    static void PAQ8FCompress(int srcFd, const char *destFileName);
+    static void PAQ8FDecompress(const char *srcFileName, int destFd);
   protected:
     Compressor();
     ~Compressor();
