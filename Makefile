@@ -12,7 +12,7 @@ OBJ=scanner.o $(SRC:.cpp=.o)
 
 #LDFLAGS=-O3 -Wl,--enable-auto-import
 LDFLAGS=-Isrc -Llib -lbz2
-CFLAGS=-O3 -static -march=corei7
+CFLAGS=-O2 -Os -static -march=corei7
 
 LEX=flex
 CXX=g++
@@ -21,7 +21,7 @@ RM=rm -f
 
 PBZ_LDFLAGS = -lbz2 -lpthread
 
-PBZ_CFLAGS = -O3
+PBZ_CFLAGS = -O2
 PBZ_CFLAGS += -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
 PBZ_CFLAGS += -D_POSIX_PTHREAD_SEMANTICS
 PBZ_CFLAGS += -DUSE_STACKSIZE_CUSTOMIZATION
@@ -48,13 +48,13 @@ scanner.o: $(SRC_PATH)/scanner.l
 
 
 SpellChecker.o: $(SRC_PATH)/SpellChecker.cpp $(SRC_PATH)/SpellChecker.h 
-	$(CXX) -c $<
+	$(CXX) $(CFLAGS) -c $<
 
 Dictionary.o: $(SRC_PATH)/Dictionary.cpp $(SRC_PATH)/Dictionary.h
-	$(CXX) -c $<
+	$(CXX) $(CFLAGS) -c $<
 
 Compressor.o: $(SRC_PATH)/Compressor.cpp $(SRC_PATH)/Compressor.h
-	$(CXX) -c $<
+	$(CXX) $(CFLAGS) -c $<
 
 
 
